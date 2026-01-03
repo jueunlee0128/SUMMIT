@@ -517,6 +517,11 @@ html {
     height: 100vh; /* 많이 넓은 간격: 필요 시 값 조정 */
 }
 
+/* 첫 번째 섹션 간격만 살짝 줄여 1→2 구간 스크롤 감소 */
+.section-gap:first-of-type {
+    height: 60vh;
+}
+
 /* 동아리 소개 섹션: 홈과 동일 크기/중앙 정렬 */
 .content.section.intro,
 #intro-section {

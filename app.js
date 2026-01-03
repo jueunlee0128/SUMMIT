@@ -184,7 +184,7 @@ function initSectionPins() {
   sections.forEach((sec, i) => {
     // 모든 섹션(1~5)에 pin 적용
     const isInform = sec.id === 'inform-section';
-    ScrollTrigger.create({
+    const pinTrigger = ScrollTrigger.create({
       id: isInform ? 'inform-pin' : undefined,
       trigger: sec,
       start: 'top top',
@@ -193,8 +193,7 @@ function initSectionPins() {
       pinSpacing: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
-      // 경계에 부드럽게 스냅하여 체감 속도 완화
-      snap: { snapTo: 1, duration: 0.6, ease: 'power1.out' },
+      // snapping은 페이드 구간을 단축시켜 갑작스런 사라짐을 유발할 수 있어 제거
     });
 
     // 다음 섹션 참조 (없으면 마지막 섹션)
@@ -202,26 +201,40 @@ function initSectionPins() {
 
     // 1~4번째 섹션: pin 해제 직후 위로 올라가며 페이드 아웃, 다음 섹션 pin 시작까지 지속
     if (i < 4) {
-      gsap.to(sec, {
-        opacity: 0,
-        yPercent: -30,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: sec,
-          start: (sec.id === 'inform-section') ? 'top+=70% top' : 'bottom top', // inform은 짧은 pin 종료 지점에 맞춰 페이드 시작
-          endTrigger: next,
-          end: 'top top',      // 다음 섹션 pin 시작 시점까지 페이드 아웃 지속
-          scrub: true,
-          invalidateOnRefresh: true,
+      gsap.fromTo(
+        sec,
+        {
+          autoAlpha: 1,
+          opacity: 1,
+          yPercent: 0,
+          immediateRender: false, // 트리거 시작 전에는 값 적용하지 않음
         },
-      });
+        {
+          autoAlpha: 0,
+          opacity: 0,
+          yPercent: -40,
+          ease: 'none',
+          overwrite: 'auto',
+          scrollTrigger: {
+            trigger: sec,
+            // pin이 false가 되는 정확한 지점에서 페이드 시작
+            start: () => pinTrigger.end,
+            // 페이드를 더 강하게 느끼도록 0.35뷰포트로 단축
+            end: () => pinTrigger.end + (window.innerHeight * 0.35),
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        }
+      );
     }
 
     // 다음 섹션(2~5): 화면에 들어오는 순간부터 pin 시작까지 페이드 인
     if (next && i < 4) {
-      gsap.fromTo(next, { opacity: 0 }, {
+      gsap.fromTo(next, { autoAlpha: 0, opacity: 0 }, {
+        autoAlpha: 1,
         opacity: 1,
         ease: 'none',
+        overwrite: 'auto',
         scrollTrigger: {
           trigger: next,
           start: 'top bottom', // 다음 섹션 상단이 뷰포트 하단에 닿으면 시작
