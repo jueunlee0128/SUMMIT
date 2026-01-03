@@ -8,6 +8,9 @@ const HOME_SCROLL_END = 320;    // px: 이 높이에 도달하면 완전 페이�
 // true일 때만 스크롤 리스너를 유지하며, 중복 등록을 방지합니다.
 // 다른 탭으로 전환되면 false로 바꿔 리스너를 제거하고 스타일을 초기화합니다.
 let homeScrollEnabled = false;
+// 홈 스크롤 핸들러 바인딩 소스/참조 (Lenis vs window)
+let __homeScrollSource = null;
+let __homeScrollHandler = null;
 
 // Lenis 싱글톤 참조 (중복 초기화 방지)
 let __lenisInstance = null;
@@ -75,7 +78,16 @@ function enableHomeScroll() {
   // 홈 탭 스크롤 애니메이션 활성화
   if (homeScrollEnabled) return;
   homeScrollEnabled = true;
-  window.addEventListener('scroll', applyHomeScrollEffects);
+  // Lenis가 활성화되어 있으면 Lenis의 스크롤 이벤트에 바인딩
+  if (__lenisInstance && typeof __lenisInstance.on === 'function') {
+    __homeScrollSource = 'lenis';
+    __homeScrollHandler = applyHomeScrollEffects;
+    __lenisInstance.on('scroll', __homeScrollHandler);
+  } else {
+    __homeScrollSource = 'window';
+    __homeScrollHandler = applyHomeScrollEffects;
+    window.addEventListener('scroll', __homeScrollHandler);
+  }
   // 초기 상태 적용
   applyHomeScrollEffects();
 }
@@ -83,7 +95,18 @@ function enableHomeScroll() {
 function disableHomeScroll() {
   if (!homeScrollEnabled) return;
   homeScrollEnabled = false;
-  window.removeEventListener('scroll', applyHomeScrollEffects);
+  // 바인딩 해제
+  if (__homeScrollSource === 'window' && __homeScrollHandler) {
+    window.removeEventListener('scroll', __homeScrollHandler);
+  }
+  if (__homeScrollSource === 'lenis' && __homeScrollHandler && __lenisInstance) {
+    // Lenis는 off를 제공하는 버전도 있으므로 가능하면 사용
+    if (typeof __lenisInstance.off === 'function') {
+      __lenisInstance.off('scroll', __homeScrollHandler);
+    }
+  }
+  __homeScrollSource = null;
+  __homeScrollHandler = null;
   resetHomeScrollEffects();
 }
 
