@@ -646,7 +646,6 @@ html {
     line-height: 1;
     color: transparent;
     -webkit-text-stroke: 2px rgba(255,255,255,0.7);
-    text-stroke: 2px rgba(255,255,255,0.7);
 }
 
 /* 마스코트 섹션 우측 텍스트 카드 */

@@ -12,12 +12,6 @@ let homeScrollEnabled = false;
 let __homeScrollSource = null;
 let __homeScrollHandler = null;
 
-// 홈 스크롤 페이드 상태/목표 (빠른 스크롤에서도 부드럽게)
-const __homeFadeState = { y: 0, opacity: 1 };
-const __homeFadeTarget = { y: 0, opacity: 1 };
-let __homeFadeTickerBound = false;
-let __homeFadeTickerFn = null;
-
 // Lenis 싱글톤 참조 (중복 초기화 방지)
 let __lenisInstance = null;
 let __lenisTickerBound = false;
@@ -54,9 +48,17 @@ function applyHomeScrollEffects() {
   const t = Math.min(Math.max((y - HOME_SCROLL_START) / range, 0), 1);
   const translateY = -t * 50; // 최대 50px 위로 이동
   const opacity = 1 - t;      // 서서히 0으로 감소
-  // 즉시 값 적용 대신 목표값만 갱신하여 빠른 스크롤에서도 부드럽게 보간
-  __homeFadeTarget.y = translateY;
-  __homeFadeTarget.opacity = opacity;
+
+  const logo = document.querySelector('.center-logo');
+  const subtitle = document.querySelector('.subtitle');
+  if (logo) {
+    logo.style.transform = `translateY(${translateY}px)`;
+    logo.style.opacity = opacity;
+  }
+  if (subtitle) {
+    subtitle.style.transform = `translateY(${translateY}px)`;
+    subtitle.style.opacity = opacity;
+  }
 }
 
 function resetHomeScrollEffects() {
@@ -70,11 +72,6 @@ function resetHomeScrollEffects() {
     subtitle.style.transform = '';
     subtitle.style.opacity = '';
   }
-  // 상태 초기화
-  __homeFadeState.y = 0;
-  __homeFadeState.opacity = 1;
-  __homeFadeTarget.y = 0;
-  __homeFadeTarget.opacity = 1;
 }
 
 function enableHomeScroll() {
@@ -93,31 +90,6 @@ function enableHomeScroll() {
   }
   // 초기 상태 적용
   applyHomeScrollEffects();
-
-  // 페이드 상태 보간용 틱커 등록 (GSAP ticker 사용)
-  if (typeof gsap !== 'undefined' && !__homeFadeTickerBound) {
-    __homeFadeTickerFn = () => {
-      // 간단한 lerp로 목표값을 향해 수렴 (빠른 스크롤에서도 부드럽게)
-      const alpha = 0.18; // 보간 비율 (값이 클수록 더 빠르게 수렴)
-      __homeFadeState.y += ( __homeFadeTarget.y - __homeFadeState.y ) * alpha;
-      __homeFadeState.opacity += ( __homeFadeTarget.opacity - __homeFadeState.opacity ) * alpha;
-
-      const logo = document.querySelector('.center-logo');
-      const subtitle = document.querySelector('.subtitle');
-      const yPx = __homeFadeState.y;
-      const op = __homeFadeState.opacity;
-      if (logo) {
-        logo.style.transform = `translateY(${yPx}px)`;
-        logo.style.opacity = op;
-      }
-      if (subtitle) {
-        subtitle.style.transform = `translateY(${yPx}px)`;
-        subtitle.style.opacity = op;
-      }
-    };
-    gsap.ticker.add(__homeFadeTickerFn);
-    __homeFadeTickerBound = true;
-  }
 }
 
 function disableHomeScroll() {
@@ -135,12 +107,6 @@ function disableHomeScroll() {
   }
   __homeScrollSource = null;
   __homeScrollHandler = null;
-  // 틱커 해제
-  if (typeof gsap !== 'undefined' && __homeFadeTickerBound && __homeFadeTickerFn) {
-    gsap.ticker.remove(__homeFadeTickerFn);
-    __homeFadeTickerBound = false;
-    __homeFadeTickerFn = null;
-  }
   resetHomeScrollEffects();
 }
 
@@ -258,30 +224,26 @@ function initSectionPins() {
 
     // 1~4번째 섹션: pin 해제 직후 위로 올라가며 페이드 아웃, 다음 섹션 pin 시작까지 지속
     if (i < 4) {
-      const isIntro = sec.id === 'intro-section';
-      const fadeLenFactor = isIntro ? 0.8 : 0.5; // 2번째(소개) 섹션은 더 길게 페이드
-      const fadeUp = isIntro ? -20 : -40;        // 소개 섹션은 위로 이동을 완만하게
-
       gsap.fromTo(
         sec,
         {
           autoAlpha: 1,
           opacity: 1,
           yPercent: 0,
-          immediateRender: false, // 트리거 시작 전에는 값 적용하지 않음
+          immediateRender: false,
         },
         {
           autoAlpha: 0,
           opacity: 0,
-          yPercent: fadeUp,
+          yPercent: -40,
           ease: 'none',
           overwrite: 'auto',
           scrollTrigger: {
             trigger: sec,
             // pin이 false가 되는 정확한 지점에서 페이드 시작
             start: () => pinTrigger.end,
-            // 페이드 길이를 늘려 빠른 스크롤에서도 바로 사라지지 않도록
-            end: () => pinTrigger.end + (window.innerHeight * fadeLenFactor),
+            // 페이드를 더 강하게 느끼도록 0.35뷰포트로 단축
+            end: () => pinTrigger.end + (window.innerHeight * 0.35),
             scrub: true,
             invalidateOnRefresh: true,
           },
