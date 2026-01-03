@@ -658,9 +658,11 @@ html {
     padding: 80px 32px;
     border-radius: 28px;
     border: 1px solid #FFFFFF;
-    background: radial-gradient(120% 120% at 15% 10%, rgba(26,16,18,0.50) 0%, rgba(26,16,18,0.85) 40%, rgba(12,8,10,0.92) 100%);
+    background: rgba(0,0,0,0.4);
     box-shadow: 0 30px 90px rgba(0,0,0,0.45);
     color: #fff;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
 }
 .mascot-info-title {
     margin: 0 0 14px;
