@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUMMIT</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- GSAP for pinning sections -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <!-- Lenis for smooth scrolling -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+</head>
+<body>
+    <!-- 로딩창 -->
+    <div class="logo-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400">
+            <g fill="#D61F26" transform="skewX(-21) translate(220, 20)">
+                <rect class="bar bar-1" x="0" y="150" width="48" height="130" />
+                <rect class="bar bar-2" x="60" y="120" width="48" height="100" />
+                <rect class="bar bar-3" x="120" y="180" width="48" height="60" />
+                <rect class="bar bar-4" x="180" y="60" width="48" height="150" />
+            </g>
+        </svg>
+        <div class="loading-text">0%</div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <img src="images/SummitMainLogo1.png" alt="Summit Logo" class="content top-left-logo" style="display: none;">
+    
+    <nav class="content top-right-nav" style="display: none;">
+        <a href="#" class="nav-link active" data-section="home">홈</a>
+        <a href="#" class="nav-link" data-section="project">프로젝트</a>
+        <a href="#" class="nav-link" data-section="member">멤버</a>
+        <a href="#" class="nav-link" data-section="qna">QnA</a>
+    </nav>
+    
+    <!-- 홈 섹션 -->
+    <div class="content center-content section home" id="home-section" style="display: none;">
+        <div class="hero-block">
+            <img src="images/SummitServeLogo1.png" alt="Summit Serve" class="center-logo">
+            <p class="subtitle">Be summit.</p>
+        </div>
+        <div class="button-container" id="recruitButtons" style="display: none;">
+            <a href="#apply" class="recruit-btn primary-btn">2기 모집 신청하기</a>
+            <a href="#result" class="recruit-btn secondary-btn">2기 합격자 확인하기</a>
+        </div>
+    </div>
+
+    <!-- 동아리 소개 섹션 -->
+    <div class="section-gap"></div>
+    <div class="content section intro" id="intro-section" style="display: none;">
+        <div class="intro-box">
+            <h2 class="intro-text">저희는 디미고 유일 올라운더, <br>핀테크 동아리 <span class="accent">SUMMIT</span> 입니다!</h2>
+        </div>
+    </div>
+    
+    <!-- 동아리 핵심 가치 섹션 -->
+    <div class="section-gap"></div>
+    <div class="content section values" id="values-section" style="display: none;">
+        <div class="values-box">
+            <p class="values-label">핵심가치</p>
+            <h2 class="values-heading"><span class="accent">SUMMIT</span>은 이러한<br>가치를 추구해요</h2>
+        </div>
+        <div class="values-grid">
+            <div class="value">도전</div>
+            <div class="value">열정</div>
+            <div class="value">융합</div>
+        </div>
+    </div>
+
+    <!-- 동아리 가치 소개 섹션 -->
+    <div class="section-gap"></div>
+    <div class="content section inform" id="inform-section" style="display: none;">
+        <div class="inform-box">
+            <div class="inform-content">
+                <div class="inform-copy">
+                    <h2 class="inform-heading">개인의 통찰을 모아 정상으로,<br><span class="accent">SUMMIT</span>에서 완성하는 가치</h2>
+                    <p class="inform-body">개인의 통찰을 넘어 공동의 유기적인 협력으로 경제의 <br>흐름을 읽어내며
+                        서로의 시각이 더해질 때 비로소 금융<br> 그 이상의 가치를 창출하며
+                        우리만의 정상에 도달합니다.</p>
+                </div>
+                <div class="inform-media">
+                    <div class="media-placeholder"></div>
+                    <div class="media-placeholder"></div>
+                    <div class="media-placeholder"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 동아리 마스코트 소개 섹션 -->
+    <div class="section-gap"></div>
+    <div class="content section mascot" id="mascot-section" style="display: none;">
+        <div class="mascot-box">
+            <div class="mascot-title-wrap">
+                <h1 class="mascot-title">BE SUMMIT</h1>
+            </div>
+            <div class="mascot-image-wrap">
+                <img src="images/Oreumi.png" alt="SUMMIT Mascot Oreumi" class="mascot-image">
+            </div>
+            <div class="mascot-outline-wrap" aria-hidden="true">
+                <h1 class="mascot-outline">BE SUMMIT</h1>   
+            </div>
+            <!-- 마스코트 소개 우측 텍스트 카드 -->
+            <div class="mascot-info-wrap">
+                <div class="mascot-info-card">
+                    <h2 class="mascot-info-title">오르미 <span class="info-roman">(Oreumi)</span></h2>
+                    <p class="mascot-info-sub">SUMMIT의 대표 귀염둥이, 오르미</p>
+                    <p class="mascot-info-body">무리를 이끄는 늑대처럼 강인한 리더십과 날카로운 통찰력을 상징하며, 부원들이 세상의 경제적 가치를 발견하고 함께 정상에 도달하도록 언제나 앞장서서 달립니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 프로젝트 섹션 -->
+    <div class="content center-content section project" id="project-section" style="display: none;">
+        <h1 style="color: #FFFFFF;">프로젝트</h1>
+        <p style="color: #FFFFFF;">프로젝트 내용이 들어갈 자리입니다.</p>
+    </div>
+    
+    <!-- 멤버 섹션 -->
+    <div class="content center-content section member" id="member-section" style="display: none;">
+        <h1 style="color: #FFFFFF;">멤버</h1>
+        <p style="color: #FFFFFF;">멤버 내용이 들어갈 자리입니다.</p>
+    </div>
+    
+    <!-- QnA 섹션 -->
+    <div class="content section qna" id="qna-section" style="display: none;">
+        <div class="qna-container">
+            <h2 class="qna-title">자주 묻는 질문</h2>
+            <div class="qna-list">     
+                <div class="qna-item" data-id="q1">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">이름 뜻이 뭔가요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">SUMMIT은 정상이라는 의미를 담고 있습니다. 각 분야의 최정상들이 모여 세상의 경제적 가치를 실현하기 위한 정상에 함께 도달하자라는 의미를 가지고 있습니다!</p>
+                    </div>
+                </div>
+                <div class="qna-item" data-id="q2">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">금융이나 경제에 대한 지식이 부족해도 지원이 가능한가요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">의지만 있다면 가능합니다. 기초 스터디와 실습을 통해 함께 성장해요.</p>
+                    </div>
+                </div>
+                <div class="qna-item" data-id="q3">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">주요 프로젝트는 어떤 방식으로 이루어지나요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">소규모 팀을 구성해 기획–디자인–개발–리서치를 순환하며 진행합니다.</p>
+                    </div>
+                </div>
+                <div class="qna-item" data-id="q4">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">동아리 활동을 통해 어떤 역량을 키울 수 있나요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">금융 리터러시, 데이터 분석, 프로덕트 개발 역량과 협업 능력을 기릅니다.</p>
+                    </div>
+                </div>
+                <div class="qna-item" data-id="q5">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">부서별로 몇 명정도 뽑을 예정인가요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">해당 기수의 상황에 따라 유동적으로 선발 인원을 조정합니다.</p>
+                    </div>
+                </div>
+                <div class="qna-item" data-id="q6">
+                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">선발 과정에서 가장 중요하게 보는 요소는 무엇인가요?</span></div>
+                    <div class="qna-answer">
+                        <span class="a-prefix">A :</span>
+                        <p class="qna-answer-text">성장 의지, 꾸준함, 팀워크를 중점적으로 평가합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
