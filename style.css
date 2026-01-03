@@ -71,7 +71,7 @@ body.loaded {
 }
 /* 홈(랜딩) 전용: 여유 스크롤 영역 제공 */
 body.loaded.home-mode {
-    min-height: 1400vh; /* 홈에서만 스크롤 여유 확보 */
+    min-height: 1370vh; /* 홈에서만 스크롤 여유 확보 */
 }
 /* QnA 전용: 한 화면 높이만큼 추가 스크롤 여유 */
 body.loaded.qna-mode {
@@ -683,18 +683,20 @@ html {
 
 /* inform 섹션 기본 박스 스타일 */
 .inform-box {
-    max-width: 1200px;
-    width: calc(100% - 120px);
+    max-width: 1400px; /* 전체 너비 확장 */
+    width: calc(100% - 80px); /* 좌우 패딩을 줄여 더 넓게 */
     color: var(--text);
     text-align: left;
+    margin: 0 auto; /* 박스 자체를 중앙 정렬 */
 }
 
 /* 2열 레이아웃: 좌측 텍스트, 우측 이미지 스택 */
 .inform-content {
     display: grid;
-    grid-template-columns: 1.1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* 중앙 경계로 맞춰 텍스트 박스를 중앙에 가깝게 */
     gap: clamp(24px, 4vw, 56px);
     align-items: center;
+    justify-items: center;
 }
 .inform-heading {
     margin: 0 0 18px;
@@ -710,12 +712,15 @@ html {
     opacity: 0.9;
     font-size: 18px;
     line-height: 1.9;
+    margin-left: auto; /* 중앙 정렬 시 텍스트 블록 폭 중앙 배치 */
+    margin-right: auto;
 }
 .inform-media {
     display: flex;
     flex-direction: column;
     gap: 25px;
     align-items: flex-end;
+    width: min(360px, 70vw); /* 우측 미디어 폭을 줄여 공간 확보 */
 }
 .media-placeholder {
     width: 350px;
@@ -725,6 +730,81 @@ html {
     border: 1px solid rgba(255,255,255,0.08);
 }
 
+/* === Inform Section: 7-card deck showing 3 === */
+.inform-deck {
+    position: relative;
+    width: 100%; /* 부모(inform-media) 폭에 맞춰 카드 덱 폭 조정 */
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+    transform: translateX(12px); /* 중앙에 더 가깝게 조정 */
+}
+
+.inform-deck .value-card {
+    position: absolute;
+    width: clamp(280px, 28vw, 400px); /* 카드 폭을 조금만 축소 */
+    height: clamp(128px, 14vw, 168px); /* 카드 높이를 조금만 축소 */
+    border-radius: 20px;
+    object-fit: cover; /* 이미지가 카드 프레임을 꽉 채우도록 */
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F7F8 100%);
+    box-shadow: 0 22px 40px rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.25);
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, box-shadow 0.35s ease;
+    cursor: default;
+    /* transform 구성 요소를 변수로 제어하여 부드러운 위/아래 움직임 제공 */
+    --baseY: 0px;
+    --bobY: 0px;
+    --scale: 1;
+    transform: translateY(calc(var(--baseY) + var(--bobY))) scale(var(--scale));
+    will-change: transform;
+    animation: none;
+}
+
+.inform-deck .value-card .card-label {
+    font-weight: 900;
+    font-size: clamp(24px, 3.6vw, 36px);
+    color: #86E21D;
+}
+
+/* Visible window states */
+.inform-deck .value-card.is-left {
+    --baseY: -192px; /* 간격 살짝 확대 */
+    --scale: 0.96;
+    z-index: 3;
+    opacity: 1;
+}
+.inform-deck .value-card.is-center {
+    --baseY: 0px;
+    --scale: 1.0;
+    z-index: 5;
+    opacity: 1;
+    box-shadow: 0 28px 64px rgba(0,0,0,0.45), 0 8px 20px rgba(0,0,0,0.25);
+}
+.inform-deck .value-card.is-right {
+    --baseY: 192px; /* 간격 살짝 확대 */
+    --scale: 0.96;
+    z-index: 4;
+    opacity: 1;
+}
+.inform-deck .value-card.is-hidden {
+    transform: translateY(0) translateZ(-200px) scale(0.86);
+    opacity: 0;
+    z-index: 1;
+}
+
+/* Remove base placeholder visuals inside deck */
+.inform-deck .media-placeholder {
+    background: transparent;
+    border: none;
+}
+
+/* 움직임 제거: 애니메이션 규칙 삭제로 정적 상태 유지 */
+
 /* 반응형: 폭이 좁아지면 수직 스택 */
 @media (max-width: 860px) {
   .inform-content {
@@ -733,6 +813,8 @@ html {
   .inform-media {
     align-items: center;
   }
+    /* 모바일에서는 가운데에 두기 */
+    .inform-deck { transform: translateX(0); }
 }
 
 .values-box {
@@ -750,6 +832,54 @@ html {
 .values-text {
     margin: 0;
     color: var(--text-muted);
+}
+
+/* 4번째 탭(Inform) 텍스트 박스 중앙 배치 + 텍스트는 좌측 정렬 */
+.inform-copy {
+    text-align: left;           /* 텍스트 좌측 정렬 */
+    justify-self: center;       /* 텍스트 박스를 그리드 좌측 컬럼의 중앙에 배치 */
+    align-self: center;         /* 그리드 셀 내에서 수직 중앙 배치 */
+    margin-left: 0;             /* 박스 좌측 여백 제거 */
+    margin-right: 0;            
+    max-width: none;            /* 최대 폭 제한 제거 */
+    width: fit-content;         /* 텍스트 내용에 맞춰 박스 폭 결정 */
+    position: relative;         /* 장식 요소(블러 동그라미) 위치 기준 */
+    /* 스크롤 애니메이션용 변수 초기값 */
+    --dotTopX: 0px;             /* 위쪽 원의 X 이동 */
+    --dotBottomX: 0px;          /* 아래쪽 원의 X 이동 */
+}
+
+/* inform 텍스트 박스에 작은 흰색 블러 동그라미 2개 추가 */
+.inform-copy::before,
+.inform-copy::after {
+    content: '';
+    position: absolute;
+    width: 28px;                /* 샘플처럼 중심 밝기가 있는 글로우 크기 */
+    height: 28px;
+    border-radius: 50%;
+    /* 중심은 밝고, 가장자리로 갈수록 자연스럽게 사라지도록 그라데이션 */
+    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.80) 38%, rgba(255,255,255,0.45) 62%, rgba(255,255,255,0.18) 85%, rgba(255,255,255,0) 100%);
+    filter: blur(12px);          /* 샘플에 가까운 퍼짐 강도 */
+    box-shadow: 0 0 80px 40px rgba(255,255,255,0.22); /* 외곽 광량을 한 겹 더 추가 */
+    pointer-events: none;       /* 상호작용 방지 */
+    will-change: transform;     /* 성능 최적화 */
+    z-index: 2;
+}
+
+/* 위쪽-왼쪽 */
+.inform-copy::before {
+    top: -24px;   /* 위쪽으로 조금 이동 */
+    left: -24px;  /* 왼쪽으로 조금 이동 */
+    width: 18px;  /* 크기를 약간 키움 */
+    height: 18px;
+    transform: translateX(var(--dotTopX));
+}
+
+/* 오른쪽-아래쪽 */
+.inform-copy::after {
+    right: -10px;
+    bottom: -28px; /* 아래쪽으로 조금 더 떨어뜨림 */
+    transform: translateX(var(--dotBottomX));
 }
 
 .accent {

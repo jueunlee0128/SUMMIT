@@ -183,10 +183,12 @@ function initSectionPins() {
 
   sections.forEach((sec, i) => {
     // 모든 섹션(1~5)에 pin 적용
+    const isInform = sec.id === 'inform-section';
     ScrollTrigger.create({
+      id: isInform ? 'inform-pin' : undefined,
       trigger: sec,
       start: 'top top',
-      end: 'bottom top', // 섹션의 하단이 뷰포트 상단에 닿을 때 pin 해제
+      end: isInform ? '+=70%' : 'bottom top', // inform 섹션만 pin 길이를 조금 줄임
       pin: true,
       pinSpacing: true,
       anticipatePin: 1,
@@ -206,7 +208,7 @@ function initSectionPins() {
         ease: 'none',
         scrollTrigger: {
           trigger: sec,
-          start: 'bottom top', // pin 해제와 동시에 시작
+          start: (sec.id === 'inform-section') ? 'top+=70% top' : 'bottom top', // inform은 짧은 pin 종료 지점에 맞춰 페이드 시작
           endTrigger: next,
           end: 'top top',      // 다음 섹션 pin 시작 시점까지 페이드 아웃 지속
           scrub: true,
@@ -240,6 +242,8 @@ function initInformCards() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
   const section = document.getElementById('inform-section');
   if (!section || getComputedStyle(section).display === 'none') return;
+  // 새 카드 덱이 존재하면 기존 순차 슬라이드는 건너뜁니다.
+  if (section.querySelector('.inform-deck')) return;
 
   const cards = section.querySelectorAll('.media-placeholder');
   if (!cards || cards.length === 0) return;
@@ -277,6 +281,96 @@ function initInformCards() {
 
   // 트리거 측정 보정
   ScrollTrigger.refresh();
+}
+
+// === Inform: 7-card deck autoplay showing only 3 ===
+function initInformDeck() {
+  const section = document.getElementById('inform-section');
+  if (!section || getComputedStyle(section).display === 'none') return;
+  const deck = section.querySelector('.inform-deck');
+  if (!deck) return;
+  const cards = Array.from(deck.querySelectorAll('.value-card'));
+  if (cards.length === 0) return;
+
+  let start = 0; // visible window start index -> shows [start, start+1, start+2]
+  const total = cards.length;
+  const AUTOPLAY_MS = 2000;
+  let intervalId = null;
+
+  function setWindow() {
+    cards.forEach((c, idx) => {
+      c.classList.remove('is-left', 'is-center', 'is-right', 'is-hidden');
+      if (idx === start) {
+        c.classList.add('is-left');
+      } else if (idx === (start + 1) % total) {
+        c.classList.add('is-center');
+      } else if (idx === (start + 2) % total) {
+        c.classList.add('is-right');
+      } else {
+        c.classList.add('is-hidden');
+      }
+    });
+  }
+
+  function next() {
+    start = (start + 1) % total;
+    setWindow();
+  }
+
+  // Initial placement
+  setWindow();
+
+  // Autoplay only while section is in view
+  if (typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top bottom',
+      end: 'bottom top',
+      onEnter: () => { if (!intervalId) intervalId = setInterval(next, AUTOPLAY_MS); },
+      onEnterBack: () => { if (!intervalId) intervalId = setInterval(next, AUTOPLAY_MS); },
+      onLeave: () => { if (intervalId) { clearInterval(intervalId); intervalId = null; } },
+      onLeaveBack: () => { if (intervalId) { clearInterval(intervalId); intervalId = null; } },
+    });
+  } else {
+    // Fallback: always autoplay
+    if (!intervalId) intervalId = setInterval(next, AUTOPLAY_MS);
+  }
+}
+
+// ===== 4번째 섹션 점(블러) 스크롤 애니메이션 =====
+function initInformDots() {
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+  const section = document.getElementById('inform-section');
+  if (!section || getComputedStyle(section).display === 'none') return;
+  const copy = section.querySelector('.inform-copy');
+  if (!copy) return;
+
+  const DOT_MARGIN = 14; // 양 끝 여유
+  function computeTargets() {
+    const w = copy.clientWidth || 0;
+    return {
+      topTarget: Math.max(0, w - DOT_MARGIN),      // 위쪽 점: 좌→우로 이동
+      bottomTarget: -Math.max(0, w - DOT_MARGIN),  // 아래쪽 점: 우→좌로 이동
+    };
+  }
+  let { topTarget, bottomTarget } = computeTargets();
+  gsap.set(copy, { '--dotTopX': '0px', '--dotBottomX': '0px' });
+
+  const pin = ScrollTrigger.getById('inform-pin');
+  gsap.to(copy, {
+    '--dotTopX': () => `${topTarget}px`,
+    '--dotBottomX': () => `${bottomTarget}px`,
+    ease: 'power1.inOut',
+    scrollTrigger: {
+      trigger: section,
+      start: pin ? pin.start : 'top top',
+      end: pin ? pin.end : 'top+=70% top',
+      scrub: true,
+      invalidateOnRefresh: true,
+      onRefresh: () => { const t = computeTargets(); topTarget = t.topTarget; bottomTarget = t.bottomTarget; },
+    }
+  });
 }
 
 // ===== 5번째(마스코트) 섹션: 이미지 먼저, 텍스트는 양쪽에서 동시에 등장 =====
@@ -492,6 +586,8 @@ document.querySelectorAll('.nav-link').forEach((link) => {
         if (section === 'home') {
           initSectionPins();
           initInformCards();
+          initInformDeck();
+            initInformDots();
           initMascotAnimations();
           // 트리거 초기화 직후 홈 스크롤 위치 복원
           setTimeout(() => {
@@ -669,6 +765,10 @@ function updateLoading() {
         initSectionPins();
         // 4번째 섹션 카드 슬라이드 인 초기화
         initInformCards();
+        // 7장 중 3장만 표시하는 덱 초기화
+        initInformDeck();
+        // 4번째 섹션 점 애니메이션 초기화
+        initInformDots();
         // 5번째 섹션 마스코트 애니메이션 초기화
         initMascotAnimations();
         // 한 번 더 새로고침으로 트리거 측정치 보정
