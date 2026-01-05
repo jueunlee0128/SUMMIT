@@ -126,9 +126,27 @@
     </div>
     
     <!-- 멤버 섹션 -->
-    <div class="content center-content section member" id="member-section" style="display: none;">
-        <h1 style="color: #FFFFFF;">멤버</h1>
-        <p style="color: #FFFFFF;">멤버 내용이 들어갈 자리입니다.</p>
+    <div class="content section member" id="member-section" style="display: none;">
+        <div class="member-container">
+            <h2 class="member-title">멤버</h2>
+            <div class="member-filters"></div>
+            <!-- 필터 칩 템플릿 -->
+            <template id="member-chip-template">
+                <button class="member-chip" type="button"></button>
+            </template>
+            <div class="member-grid"></div>
+            <!-- 템플릿: 자바스크립트로 복제하여 그리드에 추가 -->
+            <template id="member-card-template">
+                <div class="member-card">
+                    <div class="member-photo" aria-label="member placeholder"></div>
+                    <div class="member-tags"></div>
+                    <div class="member-info">
+                        <h3 class="member-name"></h3>
+                        <p class="member-bio"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
     </div>
     
     <!-- QnA 섹션 -->
@@ -182,6 +200,61 @@
         </div>
     </div>
     
+
+    <!-- 학번 작성 탭 (합격자 확인 섹션) -->
+    <div class="content section result" id="result-section" aria-label="학번 작성 탭" style="display: none;">
+        <img src="./SummitMainLogo1.png" alt="Summit Main Logo" class="result-top-left-logo" id="resultSectionHomeLogo">
+        <div class="result-wrap">
+            <div class="result-hero">
+                <img src="./SummitServeLogo1.png" alt="Summit Serve" class="result-logo">
+                <p class="result-subtitle">최종 합격자 조회</p> 
+            </div>
+            <div class="result-card">
+                <div class="result-row">
+                    <label class="result-label" for="studentId">학번</label>
+                    <input id="studentId" class="result-input" type="text" placeholder="학번을 입력하세요" autocomplete="off" />
+                </div>
+                <div class="result-row">
+                    <label class="result-label" for="studentName">이름</label>
+                    <input id="studentName" class="result-input" type="text" placeholder="이름을 입력하세요" autocomplete="off" />
+                </div>
+                <div class="result-button">
+                    <div class="result-button">
+                        <button id="checkResultBtn" class="result-action" type="button">조회하기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 최종 합격자: 조회 결과 (합격) -->
+    <div class="content section result-pass" id="result-pass-section" style="display: none;">
+        <img src="./SummitMainLogo1.png" alt="Summit Main Logo" class="result-top-left-logo" id="resultPassHomeLogo">
+        <div class="result-wrap">
+            <div class="result-hero">
+                <img src="./SummitServeLogo1.png" alt="Summit Serve" class="result-logo">
+                <p class="result-subtitle">최종 합격자 조회</p>
+            </div>
+            <div class="result-card">
+                <p class="result-status-text pass">축하합니다! 최종 합격자입니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 최종 합격자: 조회 결과 (불합격) -->
+    <div class="content section result-fail" id="result-fail-section" style="display: none;">
+        <img src="./SummitMainLogo1.png" alt="Summit Main Logo" class="result-top-left-logo" id="resultFailHomeLogo">
+        <div class="result-wrap">
+            <div class="result-hero">
+                <img src="./SummitServeLogo1.png" alt="Summit Serve" class="result-logo">
+                <p class="result-subtitle">최종 합격자 조회</p>
+            </div>
+            <div class="result-card">
+                <p class="result-status-text fail">아쉽지만 불합격입니다.</p>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

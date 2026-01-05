@@ -1,5 +1,18 @@
-// ===== 동아리 신청 기간 설정 =====
-const isRecruitmentPeriod = false; // true: 모집 기간, false: 모집 마감
+// ===== 동아리 신청/합격자 확인 기간 설정 =====
+const isRecruitmentPeriod = false;   // true: 모집 신청 기간
+const isResultCheckPeriod = true;  // true: 합격자 확인 기간
+
+
+// ===== 합격/불합격자 데이터 저장 =====
+// 아래 배열에 합격자와 불합격자의 학번(id)과 이름(name)을 각각 추가하세요.
+// 예: { id: '2026-001', name: '홍길동' }
+const ACCEPTED_STUDENTS = [
+  // { id: '2026-001', name: '홍길동' },
+  { id: '1419', name: '이주은'},
+];
+const FAILED_STUDENTS = [
+  { id: '2417', name: '이주은'},
+];
 
 // ===== 홈 스크롤 페이드 설정 =====
 const HOME_SCROLL_START = 80;   // px: 이 높이부터 효과 시작
@@ -15,6 +28,9 @@ let __homeScrollHandler = null;
 // Lenis 싱글톤 참조 (중복 초기화 방지)
 let __lenisInstance = null;
 let __lenisTickerBound = false;
+
+// 최근 스크롤 위치(홈 페이드 방향 판단용)
+let __prevScrollY = 0;
 
 // 탭별 스크롤 상태 저장/복원 (탭 독립 스크롤)
 let __currentTab = 'home';
@@ -44,6 +60,8 @@ function applyHomeScrollEffects() {
   if (!homeActive) return;
 
   const y = window.scrollY || window.pageYOffset || 0;
+  const was = __prevScrollY;
+  const goingDown = y >= was;
   const range = HOME_SCROLL_END - HOME_SCROLL_START;
   const t = Math.min(Math.max((y - HOME_SCROLL_START) / range, 0), 1);
   const translateY = -t * 50; // 최대 50px 위로 이동
@@ -51,6 +69,7 @@ function applyHomeScrollEffects() {
 
   const logo = document.querySelector('.center-logo');
   const subtitle = document.querySelector('.subtitle');
+  const recruitButtons = document.getElementById('recruitButtons');
   if (logo) {
     logo.style.transform = `translateY(${translateY}px)`;
     logo.style.opacity = opacity;
@@ -59,11 +78,33 @@ function applyHomeScrollEffects() {
     subtitle.style.transform = `translateY(${translateY}px)`;
     subtitle.style.opacity = opacity;
   }
+  // 버튼 컨테이너가 보일 때는 동일한 스크롤 페이드 적용 (조금 지연/가속)
+  if (recruitButtons && recruitButtons.style.display !== 'none') {
+    const delayPx = 20; // 내려갈 때(올라갈 때) 약간 늦게 시작
+    if (goingDown) {
+      // 스크롤 다운: 중앙 로고보다 살짝 늦게 올라가도록 오프셋 적용
+      const tb = Math.min(Math.max((y - HOME_SCROLL_START - delayPx) / range, 0), 1);
+      const btnTranslate = -tb * 50;
+      const btnOpacity = 1 - tb;
+      recruitButtons.style.transform = `translateY(${btnTranslate}px)`;
+      recruitButtons.style.opacity = btnOpacity;
+    } else {
+      // 스크롤 업: 중앙 로고보다 살짝 빠르게 내려오도록 약간 더 빠른 복귀
+      const tb = Math.min(Math.max((y - HOME_SCROLL_START) / range, 0), 1);
+      const btnTranslate = -(tb * 50 * 0.9); // 약간 더 작은 이동량 → 더 빨리 원위치
+      const btnOpacity = 1 - (tb * 0.9);     // 더 빨리 원래 불투명도로 복귀
+      recruitButtons.style.transform = `translateY(${btnTranslate}px)`;
+      recruitButtons.style.opacity = btnOpacity;
+    }
+  }
+
+  __prevScrollY = y;
 }
 
 function resetHomeScrollEffects() {
   const logo = document.querySelector('.center-logo');
   const subtitle = document.querySelector('.subtitle');
+  const recruitButtons = document.getElementById('recruitButtons');
   if (logo) {
     logo.style.transform = '';
     logo.style.opacity = '';
@@ -71,6 +112,10 @@ function resetHomeScrollEffects() {
   if (subtitle) {
     subtitle.style.transform = '';
     subtitle.style.opacity = '';
+  }
+  if (recruitButtons) {
+    recruitButtons.style.transform = '';
+    recruitButtons.style.opacity = '';
   }
 }
 
@@ -118,28 +163,25 @@ function initHomeIntroAnimation() {
 
   const logo = home.querySelector('.center-logo');
   const subtitle = home.querySelector('.subtitle');
+  const buttons = document.getElementById('recruitButtons');
+  const topLeftLogo = document.querySelector('.top-left-logo');
+  const topRightNav = document.querySelector('.top-right-nav');
   if (!logo && !subtitle) return;
 
-  // 초기 상태를 살짝 아래/투명으로 설정 후 부드럽게 등장
-  gsap.set([logo, subtitle].filter(Boolean), { opacity: 0, y: 20 });
+  // 중앙 요소: 아래에서 위로, 상단 요소: 위에서 아래로
+  gsap.set([logo, subtitle, buttons].filter(Boolean), { opacity: 0, y: 20 });
+  if (topLeftLogo) gsap.set(topLeftLogo, { opacity: 0, y: -20 });
+  if (topRightNav) gsap.set(topRightNav, { opacity: 0, y: -20 });
 
   const tl = gsap.timeline();
-  if (logo) {
-    tl.to(logo, {
-      opacity: 1,
-      y: 0,
-      duration: 1.2,
-      ease: 'power2.out'
-    }, 0);
-  }
-  if (subtitle) {
-    tl.to(subtitle, {
-      opacity: 1,
-      y: 0,
-      duration: 1.0,
-      ease: 'power2.out'
-    }, '-=0.6');
-  }
+  // 모든 요소를 동시에 등장시키기
+  const targets = [topLeftLogo, topRightNav, logo, subtitle, buttons].filter(Boolean);
+  tl.to(targets, {
+    opacity: 1,
+    y: 0,
+    duration: 0.3,
+    ease: 'power2.out'
+  }, 0);
 }
 
 // ===== Lenis Smooth Scrolling =====
@@ -242,8 +284,8 @@ function initSectionPins() {
             trigger: sec,
             // pin이 false가 되는 정확한 지점에서 페이드 시작
             start: () => pinTrigger.end,
-            // 페이드를 더 강하게 느끼도록 0.35뷰포트로 단축
-            end: () => pinTrigger.end + (window.innerHeight * 0.35),
+            // 1번째 섹션은 더 짧은 범위로 빠르게 복귀하도록 조정
+            end: () => pinTrigger.end + (window.innerHeight * (i === 0 ? 0.18 : 0.35)),
             scrub: true,
             invalidateOnRefresh: true,
           },
@@ -260,8 +302,8 @@ function initSectionPins() {
         overwrite: 'auto',
         scrollTrigger: {
           trigger: next,
-          start: 'top bottom', // 다음 섹션 상단이 뷰포트 하단에 닿으면 시작
-          end: 'top top',      // 다음 섹션 상단이 뷰포트 상단에 닿아 pin 시작될 때 종료
+          start: 'top bottom',
+          end: i === 0 ? 'top 85%' : 'top top', // 첫 전환 구간은 더 짧게 페이드 인
           scrub: true,
           invalidateOnRefresh: true,
         },
@@ -577,17 +619,65 @@ function showSection(sectionName) {
           mascot.classList.remove('active-mascot');
           mascot.style.display = 'none';
         }
-        // QnA 탭은 자체 스크롤 여유 제공 (한 화면 높이 추가)
+        // QnA/Member 탭은 스크롤 여유 제공 (한 화면 높이 추가) 및 섹션별 초기화
         if (sectionName === 'qna') {
           document.body.classList.add('qna-mode');
+          document.body.classList.remove('member-mode');
           document.body.style.minHeight = '200vh';
           // QnA 아코디언 초기화
           if (typeof initQnaAccordion === 'function') {
             initQnaAccordion();
           }
+        } else if (sectionName === 'member') {
+          document.body.classList.add('member-mode');
+          document.body.classList.remove('qna-mode');
+          // 멤버 탭은 카드 개수에 따라 스크롤 여유를 동적으로 계산
+          // 멤버 섹션 초기화 (필터 + 그리드)
+          initMemberSection();
+          // 렌더 직후 동적 스크롤 높이 설정
+          updateMemberScrollPadding();
+          // 리사이즈 시에도 재계산 (중복 등록 방지)
+          if (!window.__memberResizeBound) {
+            window.__memberResizeBound = true;
+            window.addEventListener('resize', () => {
+              if (__currentTab === 'member') updateMemberScrollPadding();
+            });
+          }
+        } else if (sectionName === 'result' || sectionName === 'result-pass' || sectionName === 'result-fail') {
+          // 결과 확인 탭은 특별 초기화 없음
+          document.body.classList.remove('qna-mode');
+          document.body.classList.remove('member-mode');
+          document.body.style.minHeight = '';
         } else {
           document.body.classList.remove('qna-mode');
+          document.body.classList.remove('member-mode');
           document.body.style.minHeight = '';
+        }
+
+        // 결과 탭에서는 상단 좌측 로고와 우측 네비를 숨김
+        const topLeftLogo = document.querySelector('.top-left-logo');
+        const topRightNav = document.querySelector('.top-right-nav');
+        if (sectionName === 'result' || sectionName === 'result-pass' || sectionName === 'result-fail') {
+          if (topLeftLogo) topLeftLogo.style.display = 'none';
+          if (topRightNav) topRightNav.style.display = 'none';
+        } else if (sectionName === 'home') {
+          if (topLeftLogo) {
+            topLeftLogo.removeAttribute('style');
+            topLeftLogo.style.display = 'block';
+            topLeftLogo.style.visibility = 'visible';
+            topLeftLogo.style.opacity = '1';
+            topLeftLogo.style.zIndex = '100';
+          }
+          if (topRightNav) {
+            topRightNav.removeAttribute('style');
+            topRightNav.style.display = 'flex';
+            topRightNav.style.visibility = 'visible';
+            topRightNav.style.opacity = '1';
+            topRightNav.style.zIndex = '101';
+          }
+        } else {
+          if (topLeftLogo) topLeftLogo.style.display = 'block';
+          if (topRightNav) topRightNav.style.display = 'flex';
         }
       }
       // 홈 이외 탭은 즉시 스크롤 위치 복원
@@ -736,10 +826,21 @@ function updateLoading() {
       // 로딩창 숨김
       document.querySelector('.logo-container').classList.add('fade-out');
 
-      // 1단계: display 변경 (하지만 opacity는 0)
+
+
+      // 1단계: display 변경 (중앙 요소는 opacity 0, y 20px로 세팅)
       document.querySelector('.top-left-logo').style.display = 'block';
       document.querySelector('.top-right-nav').style.display = 'flex';
-      document.getElementById('home-section').style.display = 'flex';
+      const homeSection = document.getElementById('home-section');
+      homeSection.style.display = 'flex';
+      // 중앙 요소들 opacity 0, y 20px로 세팅 (애니메이션 자연스럽게)
+      const logo = homeSection.querySelector('.center-logo');
+      const subtitle = homeSection.querySelector('.subtitle');
+      const buttons = document.getElementById('recruitButtons');
+      if (logo) { logo.style.opacity = '0'; logo.style.transform = 'translateY(20px)'; }
+      if (subtitle) { subtitle.style.opacity = '0'; subtitle.style.transform = 'translateY(20px)'; }
+      if (buttons) { buttons.style.opacity = '0'; buttons.style.transform = 'translateY(20px)'; }
+
       const introAtLoad = document.getElementById('intro-section');
       if (introAtLoad) {
         introAtLoad.style.display = 'flex';
@@ -750,6 +851,11 @@ function updateLoading() {
         informAtLoad.style.display = 'flex';
         // 페이드인은 body.loaded 후에 활성화
       }
+
+      // 한 프레임 뒤에 GSAP 애니메이션 시작 (강제 리플로우)
+      requestAnimationFrame(() => {
+        initHomeIntroAnimation();
+      });
 
       // 2단계: 브라우저가 렌더링한 후 opacity transition 시작
       setTimeout(() => {
@@ -767,6 +873,10 @@ function updateLoading() {
           valuesSection.style.display = 'flex';
           valuesSection.classList.add('active-values');
         }
+
+        // 결과 조회 버튼 핸들러 바인딩
+        setupResultCheck();
+        setupResultHomeLogo();
         // 가치 소개 섹션도 표시 및 페이드인
         const informSection = document.getElementById('inform-section');
         if (informSection) {
@@ -786,11 +896,51 @@ function updateLoading() {
           homeSection.classList.remove('initial-fade');
         }, 300);
 
-        // 버튼 표시
-        if (isRecruitmentPeriod) {
-          setTimeout(() => {
-            document.getElementById('recruitButtons').style.display = 'flex';
-          }, 1500);
+        // 버튼 표시: 기간에 따라 한 종류만 노출
+        const buttons = document.getElementById('recruitButtons');
+        if (buttons) {
+          const applyBtn = buttons.querySelector('.primary-btn');
+          const resultBtn = buttons.querySelector('.secondary-btn');
+          // 기본은 모두 숨김
+          if (applyBtn) applyBtn.style.display = 'none';
+          if (resultBtn) resultBtn.style.display = 'none';
+          if (isRecruitmentPeriod && !isResultCheckPeriod) {
+            if (applyBtn) applyBtn.style.display = 'inline-flex';
+            buttons.style.display = 'flex';
+          } else if (isResultCheckPeriod && !isRecruitmentPeriod) {
+            if (resultBtn) resultBtn.style.display = 'inline-flex';
+            buttons.style.display = 'flex';
+          } else if (isRecruitmentPeriod && isResultCheckPeriod) {
+            // 둘 다 true인 예외 상황: 신청 버튼만 우선 노출
+            if (applyBtn) applyBtn.style.display = 'inline-flex';
+            buttons.style.display = 'flex';
+          } else {
+            // 어떤 기간도 아니면 컨테이너 숨김
+            buttons.style.display = 'none';
+          }
+
+          // 버튼 클릭 동작: 기간에 따라 탭 이동
+          if (applyBtn) {
+            applyBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              if (isRecruitmentPeriod) {
+                // 추후 'apply' 섹션이 생기면 탭 전환
+                // 현재는 홈 유지
+              } else {
+                alert('현재는 모집 신청 기간이 아닙니다.');
+              }
+            });
+          }
+          if (resultBtn) {
+            resultBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              if (isResultCheckPeriod) {
+                showSection('result');
+              } else {
+                alert('현재는 합격자 확인 기간이 아닙니다.');
+              }
+            });
+          }
         }
 
         // 홈 활성화 상태이므로 스크롤 효과를 켭니다
@@ -820,6 +970,190 @@ function updateLoading() {
   setTimeout(updateLoading, delay);
 }
 
+// ===== Member: Data-driven filters and grid =====
+// 버튼(필터) 추가를 간단히: 아래 배열에 { id, label, variant } 항목을 추가하세요.
+// variant: 'primary' | 'muted' (디자인 톤)
+const MEMBER_FILTERS = [
+  { id: '1기', label: '1기', variant: 'primary' },
+  { id: '창립멤버', label: '창립멤버', variant: 'muted' },
+];
+
+// 멤버 박스 데이터: { name, role, tags, bio }에서 tags에 해당 필터 id를 넣으면 필터링됩니다.
+const MEMBERS = [
+  { name: '황인성', role: '동장 / 개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 황인성입니다.' },
+  { name: '조현석', role: '창동장 / 디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 조현석입니다.'},
+  { name: '양신우', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 양신우입니다.'},
+  { name: '김민경', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 김민경입니다.'},
+  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 임다솔입니다.'},
+  { name: '서은찬', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 서은찬입니다.'},
+  { name: '주윤성', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 주윤성입니다.'},
+  { name: '손연우', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 손연우입니다.'},
+  { name: '민수연', role: '동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 민수연입니다.'},
+  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 이주은입니다.'},
+  { name: '양세린', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 양세린입니다.'},
+  { name: '김서윤', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 김서윤입니다.'},
+  { name: '장세혁', role: '기획', tags: ['1기'], bio: '안녕하세요, 저는 장세혁입니다.'}
+];
+
+let __memberActiveFilter = null; // 선택된 필터 id (null이면 전체)
+
+function getHighestGenerationFilterId() {
+  let maxGen = -Infinity;
+  let chosen = null;
+  MEMBER_FILTERS.forEach(f => {
+    const text = String(f.id ?? f.label ?? '');
+    // 우선 '숫자+기' 패턴을 찾고, 없으면 최초 숫자를 사용
+    let num = NaN;
+    const m1 = text.match(/(\d+)\s*기/);
+    if (m1) {
+      num = parseInt(m1[1], 10);
+    } else {
+      const m2 = text.match(/(\d+)/);
+      if (m2) num = parseInt(m2[1], 10);
+    }
+    if (!isNaN(num) && num > maxGen) {
+      maxGen = num;
+      chosen = f.id;
+    }
+  });
+  return chosen;
+}
+
+function renderMemberFilters() {
+  const section = document.getElementById('member-section');
+  if (!section) return;
+  const wrap = section.querySelector('.member-filters');
+  const tpl = document.getElementById('member-chip-template');
+  if (!wrap || !tpl) return;
+
+  wrap.innerHTML = '';
+  MEMBER_FILTERS.forEach(f => {
+    const chipNode = tpl.content.cloneNode(true);
+    const btn = chipNode.querySelector('.member-chip');
+    btn.textContent = f.label;
+    btn.dataset.filterId = f.id;
+    btn.classList.add(f.variant === 'primary' ? 'chip-primary' : 'chip-muted');
+    if (__memberActiveFilter === f.id) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      __memberActiveFilter = f.id;
+      // active 상태 업데이트
+      wrap.querySelectorAll('.member-chip').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      renderMemberGrid();
+    });
+    wrap.appendChild(chipNode);
+  });
+}
+
+function renderMemberGrid() {
+  const section = document.getElementById('member-section');
+  if (!section) return;
+  const grid = section.querySelector('.member-grid');
+  const tpl = document.getElementById('member-card-template');
+  if (!grid || !tpl) return;
+
+  // 그리드 페이드 아웃 → 데이터 교체 → 페이드 인 애니메이션
+  if (typeof gsap !== 'undefined') {
+    gsap.to(grid, { opacity: 0, duration: 0.18, onComplete: () => {
+      grid.innerHTML = '';
+      const data = (Array.isArray(MEMBERS) ? MEMBERS : [])
+        .filter(m => {
+          if (!__memberActiveFilter) return true;
+          const tags = Array.isArray(m.tags) ? m.tags : [];
+          return tags.includes(__memberActiveFilter);
+        });
+      const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
+      useData.forEach((m) => {
+        const node = tpl.content.cloneNode(true);
+        const nameEl = node.querySelector('.member-name');
+        const bioEl = node.querySelector('.member-bio');
+        const tagsWrap = node.querySelector('.member-tags');
+        if (nameEl) nameEl.textContent = m.name || '멤버';
+        if (bioEl) bioEl.textContent = m.bio || '';
+        // 역할을 칩으로 분할 렌더링 (예: '동장 / 개발')
+        const tokens = String(m.role || '').split('/').map(s => s.trim()).filter(Boolean);
+        if (tagsWrap) {
+          tokens.forEach(t => {
+            const chip = document.createElement('span');
+            chip.className = 'member-tag';
+            chip.textContent = t;
+            // 동장/창동장은 빨간색 하이라이트
+            if (t === '동장' || t === '창동장') {
+              chip.classList.add('lead');
+            }
+            // 카드 수가 변경되었을 수 있으므로 스크롤 여유 재계산
+            updateMemberScrollPadding();
+            tagsWrap.appendChild(chip);
+          });
+        }
+        grid.appendChild(node);
+      });
+      gsap.to(grid, { opacity: 1, duration: 0.22, overwrite: true });
+    }, overwrite: true });
+  } else {
+    grid.innerHTML = '';
+    const data = (Array.isArray(MEMBERS) ? MEMBERS : [])
+      .filter(m => {
+        if (!__memberActiveFilter) return true;
+        const tags = Array.isArray(m.tags) ? m.tags : [];
+        return tags.includes(__memberActiveFilter);
+      });
+    const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
+    useData.forEach((m) => {
+      const node = tpl.content.cloneNode(true);
+      const nameEl = node.querySelector('.member-name');
+      const bioEl = node.querySelector('.member-bio');
+      const tagsWrap = node.querySelector('.member-tags');
+      if (nameEl) nameEl.textContent = m.name || '멤버';
+      if (bioEl) bioEl.textContent = m.bio || '';
+      // 역할을 칩으로 분할 렌더링 (예: '동장 / 개발')
+      const tokens = String(m.role || '').split('/').map(s => s.trim()).filter(Boolean);
+      if (tagsWrap) {
+        tokens.forEach(t => {
+          const chip = document.createElement('span');
+          chip.className = 'member-tag';
+          chip.textContent = t;
+          if (t === '동장' || t === '창동장') {
+            chip.classList.add('lead');
+          }
+          updateMemberScrollPadding();
+          tagsWrap.appendChild(chip);
+        });
+      }
+      grid.appendChild(node);
+    });
+  }
+}
+
+      // ===== Member: dynamic scroll padding based on rows =====
+      function updateMemberScrollPadding() {
+        const section = document.getElementById('member-section');
+        if (!section) return;
+        const grid = section.querySelector('.member-grid');
+        if (!grid) return;
+        const count = grid.children.length;
+        // CSS 브레이크포인트에 맞춘 컬럼 계산
+        const w = window.innerWidth || document.documentElement.clientWidth || 0;
+        const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
+        const rows = Math.max(1, Math.ceil(count / cols));
+        // 최소 스크롤 여유: 1행일 때 140vh, 추가 행마다 50vh 가산
+        const base = 140; // vh
+        const perRow = 50; // vh
+        const minVh = base + perRow * (rows - 1);
+        // 콘텐츠가 더 길면 자연 높이를 우선하므로 min-height만 설정
+        document.body.style.minHeight = `${minVh}vh`;
+      }
+
+function initMemberSection() {
+  // 처음 진입 시 가장 높은 기수 탭을 기본 활성화
+  if (!__memberActiveFilter) {
+    const def = getHighestGenerationFilterId();
+    __memberActiveFilter = def || null;
+  }
+  renderMemberFilters();
+  renderMemberGrid();
+}
+
 // 초기화
 bars.forEach((bar) => {
   bar.style.transform = 'scaleY(0)';
@@ -833,3 +1167,119 @@ updateLoading();
 
 // Lenis 초기화
 initSmoothScrolling();
+
+// ===== 합격자 조회 기능 =====
+let __resultCheckBound = false;
+function setupResultCheck() {
+  if (__resultCheckBound) return;
+  const btn = document.getElementById('checkResultBtn');
+  if (!btn) return;
+  __resultCheckBound = true;
+  btn.addEventListener('click', () => {
+    if (!isResultCheckPeriod) {
+      alert('현재는 합격자 확인 기간이 아닙니다.');
+      return;
+    }
+    const idInput = document.getElementById('studentId');
+    const nameInput = document.getElementById('studentName');
+    const id = String(idInput && idInput.value ? idInput.value : '').trim();
+    const name = String(nameInput && nameInput.value ? nameInput.value : '').trim();
+    if (!id || !name) {
+      alert('학번과 이름을 모두 입력하세요.');
+      return;
+    }
+    const isAccepted = ACCEPTED_STUDENTS.some(s => String(s.id).trim() === id && String(s.name).trim() === name);
+    const isFailed = FAILED_STUDENTS.some(s => String(s.id).trim() === id && String(s.name).trim() === name);
+    if (isAccepted) {
+      showSection('result-pass');
+    } else if (isFailed) {
+      showSection('result-fail');
+    } else {
+      alert('명단에 없는 정보입니다. 학번과 이름을 다시 확인하세요.');
+    }
+  });
+}
+
+// ===== 모든 SummitMainLogo1.png(홈 제외) 클릭 시 홈 이동 =====
+let __resultLogoBound = false;
+function setupResultHomeLogo() {
+  if (__resultLogoBound) return;
+  // 홈 섹션을 제외한 모든 SummitMainLogo1.png(좌측 상단 로고) 선택
+  const allLogos = Array.from(document.querySelectorAll('img[src$="SummitMainLogo1.png"]'));
+  // 홈 섹션의 .top-left-logo는 제외
+  const homeLogo = document.querySelector('.top-left-logo');
+  const logos = allLogos.filter(el => el !== homeLogo);
+  if (logos.length === 0) return;
+  __resultLogoBound = true;
+  logos.forEach((el) => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      // 현재 탭이 project/member/qna/result/result-pass/result-fail면 홈 섹션 요소만 애니메이션 적용
+      const currentTab = window.__currentTab || '';
+      showSection('home');
+      setTimeout(() => {
+        // 홈 섹션 진입 시 상단 로고/네비 항상 복원
+        const topLeftLogo = document.querySelector('.top-left-logo');
+        const topRightNav = document.querySelector('.top-right-nav');
+        if (topLeftLogo) {
+          topLeftLogo.removeAttribute('style');
+          topLeftLogo.style.display = 'block';
+          topLeftLogo.style.visibility = 'visible';
+          topLeftLogo.style.opacity = '1';
+          topLeftLogo.style.zIndex = '100';
+        }
+        if (topRightNav) {
+          topRightNav.removeAttribute('style');
+          topRightNav.style.display = 'flex';
+          topRightNav.style.visibility = 'visible';
+          topRightNav.style.opacity = '1';
+          topRightNav.style.zIndex = '101';
+        }
+        // 입력칸 초기화
+        const idInput = document.getElementById('studentId');
+        const nameInput = document.getElementById('studentName');
+        if (idInput) idInput.value = '';
+        if (nameInput) nameInput.value = '';
+        if ([
+          'project', 'member', 'qna',
+          'result', 'result-pass', 'result-fail'
+        ].includes(currentTab)) {
+          // 홈 섹션 요소만 애니메이션(상단 로고/네비 제외)
+          if (typeof gsap !== 'undefined') {
+            const home = document.getElementById('home-section');
+            const logo = home ? home.querySelector('.center-logo') : null;
+            const subtitle = home ? home.querySelector('.subtitle') : null;
+            const buttons = document.getElementById('recruitButtons');
+            gsap.set([logo, subtitle, buttons].filter(Boolean), { opacity: 0, y: 20 });
+            gsap.to([logo, subtitle, buttons].filter(Boolean), {
+              opacity: 1,
+              y: 0,
+              duration: 0.3,
+              ease: 'power2.out',
+              stagger: 0
+            });
+          }
+        } else {
+          // 기존 전체 애니메이션(상단 로고/네비 포함)
+          if (typeof initHomeIntroAnimation === 'function') {
+            setTimeout(() => { initHomeIntroAnimation(); }, 100);
+          }
+        }
+        if (typeof ScrollTrigger !== 'undefined') {
+          initSectionPins();
+          initInformCards();
+          initInformDeck();
+          initInformDots();
+          initMascotAnimations();
+          setTimeout(() => {
+            if (typeof ScrollTrigger !== 'undefined') {
+              ScrollTrigger.refresh();
+            }
+            restoreTabScroll('home');
+          }, 60);
+        }
+      }, 400);
+    });
+  });
+}

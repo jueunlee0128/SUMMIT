@@ -20,7 +20,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8vw;
-    width: calc(100% - 160px);
+    width: calc(100% - 160px);  
     max-width: 1100px;
     margin-top: 24px;
     margin-left: auto;
@@ -76,6 +76,10 @@ body.loaded.home-mode {
 /* QnA 전용: 한 화면 높이만큼 추가 스크롤 여유 */
 body.loaded.qna-mode {
     min-height: 200vh; /* QnA 탭에서 1뷰포트 높이만큼 스크롤 가능 */
+}
+/* 멤버 탭에서도 상단 여유 스크롤 제공 */
+body.loaded.member-mode {
+    min-height: 200vh;
 }
 
 /* html에 적용된 초기 overflow: hidden을 해제하여 수직 스크롤 허용 */
@@ -162,6 +166,25 @@ body.loaded .content:not(.section) {
     opacity: 1;
 }
 
+/* 결과 조회: 합격/불합격 섹션 페이드 규칙 */
+.content.section.result-pass,
+.content.section.result-fail {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.content.section.result-pass.active-result-pass,
+.content.section.result-fail.active-result-fail {
+    opacity: 1;
+}
+/* 합격자 확인(학번 작성 탭) 섹션 페이드 규칙 */
+.content.section.result {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.content.section.result.active-result {
+    opacity: 1;
+}
+
 /* 홈 섹션 영역 크기: 너비는 화면 전체, 높이는 화면 하단까지 */
 .content.section.home,
 .content.center-content.section.home,
@@ -205,6 +228,154 @@ body.loaded .content:not(.section) {
 }
 .content.section.member.active-member {
     opacity: 1;
+}
+
+/* 멤버 섹션 레이아웃 (center-content 고정 포지션 무효화) */
+.content.section.member,
+#member-section {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 120px 0; /* 상단 여백으로 타이틀 공간 확보 */
+}
+
+.member-container {
+    width: calc(100% - 160px);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.member-title {
+    margin: 0 0 32px;
+    color: #FFFFFF;
+    text-align: center;
+    font-weight: 800;
+    font-size: clamp(28px, 4.4vw, 44px);
+    letter-spacing: 0.5px;
+}
+
+.member-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+    margin: 0 0 22px;
+}
+
+.member-chip {
+    border: none;
+    outline: none;
+    padding: 10px 18px;
+    border-radius: 1000px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.member-chip:focus-visible {
+    box-shadow: 0 0 0 3px rgba(87, 5, 15, 0.6);
+}
+.chip-primary {
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+}
+.chip-primary:hover { transform: translateY(-2px); }
+
+.chip-muted {
+    background: rgba(255,255,255,0.1);
+    color: #FFFFFF;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+.chip-muted:hover { transform: translateY(-2px); }
+
+/* 활성 칩 상태 */
+.member-chip.active {
+    background: var(--primary);
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+    transform: translateY(-2px);
+}
+
+/* 비활성(선택되지 않은) 칩은 개국공신 스타일로 */
+.member-chip:not(.active) {
+    background: rgba(255,255,255,0.1);
+    color: #FFFFFF;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+
+.member-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+.member-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 10px 8px;
+    border-radius: 24px;
+    background: transparent;
+}
+
+.member-photo {
+    width: clamp(180px, 26vw, 300px);
+    aspect-ratio: 1 / 1; /* 정사각형 유지 */
+    height: auto;
+    border-radius: 28px;
+    background: #33393f; /* 회색 박스 */
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 16px 30px rgba(0,0,0,0.42);
+    margin: 0 auto; /* 그리드 내부 중앙 정렬 */
+}
+
+.member-tags {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center; /* 역할 칩 중앙 정렬 */
+    margin-top: 6px;
+}
+.member-tag {
+    padding: 10px 18px;
+    border-radius: 1000px;
+    font-weight: 800;
+    font-size: 14px;
+    color: #cfc9c9;
+    background: linear-gradient(180deg, rgba(72,72,74,0.65) 0%, rgba(56,56,58,0.58) 100%);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+}
+.member-tag.lead {
+    color: #FFFFFF;
+    background: var(--primary);
+    border: none;
+    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+}
+
+.member-info { color: #FFFFFF; text-align: center; margin-top: -6px; }
+.member-name { margin: 4px 0 6px; font-size: clamp(18px, 3.6vw, 30px); font-weight: 900; letter-spacing: 0.5px; }
+.member-bio { margin: 0; font-size: clamp(14px, 2vw, 18px); color: rgba(255,255,255,0.9); }
+/* 박스 하단 소개 텍스트 크기 축소 */
+.member-bio { font-size: clamp(12px, 1.7vw, 16px); line-height: 1.7; }
+
+@media (max-width: 1024px) {
+  .member-container { width: calc(100% - 120px); }
+  .member-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .member-container { width: calc(100% - 40px); }
+  .member-grid { grid-template-columns: 1fr; }
 }
 
 .content.section.qna {
@@ -340,6 +511,17 @@ body.loaded .content:not(.section) {
     width: auto;
 }
 
+/* Result pass/fail sections: local top-left logo */
+.result-top-left-logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    height: 60px;
+    width: auto;
+    cursor: pointer;
+    z-index: 5;
+}
+
 .top-right-nav {
     position: fixed;
     top: 50px;
@@ -402,6 +584,8 @@ body.loaded .content:not(.section) {
     display: flex;
     gap: 20px;
     margin-top: 30px;
+    transition: transform 0.6s ease, opacity 0.6s ease;
+    will-change: transform, opacity;
 }
 
 .recruit-btn {
@@ -582,6 +766,114 @@ html {
     justify-content: center;
 }
 
+/* 합격자 확인(학번 작성 탭) 섹션 레이아웃 */
+.content.section.result,
+#result-section {
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start; /* 상단으로 올림 */
+    justify-content: center;
+    padding-top: 80px; /* 상단 여백으로 위로 배치 */
+}
+
+.result-wrap {
+    max-width: 840px;
+    width: calc(100% - 120px);
+    margin: 0 auto;
+}
+.result-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px; /* 이미지와 텍스트 간격 축소 */
+    margin-bottom: 28px; /* 텍스트와 입력 박스 간격 확대 */
+}
+.result-logo {
+    max-width: 80vw;
+    max-height: 36vh;
+    width: auto;
+    height: auto;
+}
+.result-subtitle {
+    color: #C30E23; /* 요청한 텍스트 색상 */
+    font-weight: 700;
+    font-size: clamp(18px, 3.2vw, 28px);
+    margin: 0;
+}
+.result-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 학번/이름 박스 간격 축소 */
+    padding: 24px; /* 박스 높이 축소 */
+    border-radius: 40px;
+    background: linear-gradient(180deg, rgba(206, 206, 212, 0.2) 0%, rgba(237, 237, 239, 0.2) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.28),
+                0 0 34px 6px rgba(255,255,255,0.22),
+                0 0 70px 14px rgba(255,255,255,0.12); /* 더 약한 흰색 글로우 */
+    max-width: 500px; /* 박스 너비 축소 */
+    margin: 0 auto; /* 중앙 정렬 */
+    min-height: 250px; /* 박스 높이 확대 */
+    justify-content: center; /* 행들을 카드 내 세로 중심으로 배치 */
+}
+.result-row {
+    display: grid;
+    grid-template-columns: 88px 0.9fr; /* 입력 칸은 내용 폭 기준 */
+    align-items: center; /* 세로 중앙 */
+    justify-items: start; /* 아이템은 좌측 기준 */
+    justify-content: end; /* 행 전체를 오른쪽으로 정렬 */
+    gap: 0; /* 레이블-입력 간격 제거 */
+    min-height: 56px; /* 행 높이 확보로 중앙 정렬 감 강화 */
+    width: 100%; /* 행은 카드 전체 폭을 사용 (내부 그리드는 우측 정렬) */
+    margin: 0 auto; /* 행 자체는 카드 내 중앙 배치 */
+}
+.result-label {
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 15px;
+    text-align: right; /* 입력과 더 가깝게 */
+    justify-self: end;
+}
+.result-input {
+    padding: 12px 14px; /* 입력 높이 소폭 축소 */
+    border-radius: 12px;
+    border: none;
+    background: rgba(12,12,14,0.7);
+    color: #FFFFFF;
+    width: 55%; /* 입력 너비 소폭 추가 축소 */
+    justify-self: start; /* 레이블과 붙도록 좌측 정렬 */
+    margin-left: 10px;
+}
+.result-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.result-status-text {
+    margin: 8px 0;
+    text-align: center;
+    font-weight: 800;
+    font-size: clamp(18px, 3vw, 26px);
+}
+.result-status-text.pass { color: #2ECC71; }
+.result-status-text.fail { color: #C30E23; }
+.result-input::placeholder { color: rgba(255,255,255,0.55); }
+.result-action {
+    margin-top: 8px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: #FFFFFF;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 10vw;
+}
+.result-action:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35); }
+
 .mascot-box {
     max-width: 1200px;
     width: calc(100% - 120px);
@@ -607,8 +899,8 @@ html {
 }
 
 .mascot-image {
-    max-width: 960; 
-    max-height: 1040;
+    max-width: 960px; 
+    max-height: 1040px;
     width: auto;
     height: auto;
 }
