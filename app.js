@@ -1,3 +1,22 @@
+// ===== 입력 칸 포커스 시 snake-border 확장 애니메이션 =====
+function setupSnakeBorderInputFocus() {
+  const inputs = document.querySelectorAll('.result-input');
+  const snakeBorders = document.querySelectorAll('.snake-border');
+  if (!inputs.length || !snakeBorders.length) return;
+  inputs.forEach(input => {
+    input.addEventListener('focus', () => {
+      snakeBorders.forEach(sb => sb.classList.add('active'));
+    });
+    input.addEventListener('blur', () => {
+      snakeBorders.forEach(sb => sb.classList.remove('active'));
+    });
+  });
+}
+
+// DOMContentLoaded 이후에 실행
+document.addEventListener('DOMContentLoaded', () => {
+  setupSnakeBorderInputFocus();
+});
 // ===== 동아리 신청/합격자 확인 기간 설정 =====
 const isRecruitmentPeriod = false;   // true: 모집 신청 기간
 const isResultCheckPeriod = true;  // true: 합격자 확인 기간
@@ -46,8 +65,11 @@ function saveCurrentTabScroll() {
 }
 
 function restoreTabScroll(tab) {
-  // 항상 최상단으로 이동하여 탭 전환 시 스크롤을 초기화
-  const y = 0;
+  // 홈 탭은 항상 0, 그 외는 저장된 위치로 복원
+  let y = 0;
+  if (tab !== 'home' && __tabScrollY.hasOwnProperty(tab)) {
+    y = __tabScrollY[tab] || 0;
+  }
   if (__lenisInstance && typeof __lenisInstance.scrollTo === 'function') {
     __lenisInstance.scrollTo(y, { immediate: true });
   } else {
@@ -525,6 +547,25 @@ function initMascotAnimations() {
 
 // ===== 섹션 전환 기능 =====
 function showSection(sectionName) {
+    // 합격자 창 배경 바 슬라이드 애니메이션
+    if (sectionName === 'result-pass') {
+      setTimeout(() => {
+        const bars = document.querySelectorAll('.result-pass-bg .bar');
+        bars.forEach((bar, i) => {
+          bar.style.transition = 'transform 0.8s cubic-bezier(0.6,0,0.4,1), opacity 0.5s';
+          bar.style.transform = 'scaleY(0)';
+          bar.style.opacity = '0.7';
+          bar.style.transitionDelay = '';
+        });
+        // 순차적으로 scaleY를 1로 변경
+        bars.forEach((bar, i) => {
+          setTimeout(() => {
+            bar.style.transform = 'scaleY(1)';
+            bar.style.transitionDelay = `${i * 0.18}s`;
+          }, i * 180);
+        });
+      }, 50);
+    }
   const FADE_DURATION = 300; // ms, matches CSS per-screen fade (style.css)
   const targetId = sectionName + '-section';
   // 현재 탭의 스크롤 저장
@@ -559,8 +600,9 @@ function showSection(sectionName) {
       // 홈 전환 시 스크롤 효과 활성화, 그 외는 비활성화
       if (sectionName === 'home') {
         document.body.classList.add('home-mode');
-        // QnA 모드 해제 및 인라인 높이 초기화
+        // QnA/멤버 모드 해제 및 인라인 높이 초기화
         document.body.classList.remove('qna-mode');
+        document.body.classList.remove('member-mode');
         document.body.style.minHeight = '';
         enableHomeScroll();
         // 홈 화면에서는 섹션 간 간격 박스를 표시
@@ -837,9 +879,7 @@ function updateLoading() {
       const logo = homeSection.querySelector('.center-logo');
       const subtitle = homeSection.querySelector('.subtitle');
       const buttons = document.getElementById('recruitButtons');
-      if (logo) { logo.style.opacity = '0'; logo.style.transform = 'translateY(20px)'; }
-      if (subtitle) { subtitle.style.opacity = '0'; subtitle.style.transform = 'translateY(20px)'; }
-      if (buttons) { buttons.style.opacity = '0'; buttons.style.transform = 'translateY(20px)'; }
+      // GSAP가 등장 애니메이션을 처리하므로 직접 opacity/transform을 설정하지 않음
 
       const introAtLoad = document.getElementById('intro-section');
       if (introAtLoad) {
@@ -980,19 +1020,19 @@ const MEMBER_FILTERS = [
 
 // 멤버 박스 데이터: { name, role, tags, bio }에서 tags에 해당 필터 id를 넣으면 필터링됩니다.
 const MEMBERS = [
-  { name: '황인성', role: '동장 / 개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 황인성입니다.' },
-  { name: '조현석', role: '창동장 / 디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 조현석입니다.'},
-  { name: '양신우', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 양신우입니다.'},
-  { name: '김민경', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 김민경입니다.'},
-  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 임다솔입니다.'},
-  { name: '서은찬', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 서은찬입니다.'},
-  { name: '주윤성', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 주윤성입니다.'},
-  { name: '손연우', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 손연우입니다.'},
-  { name: '민수연', role: '동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 민수연입니다.'},
-  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 이주은입니다.'},
-  { name: '양세린', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 양세린입니다.'},
-  { name: '김서윤', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 김서윤입니다.'},
-  { name: '장세혁', role: '기획', tags: ['1기'], bio: '안녕하세요, 저는 장세혁입니다.'}
+  { name: '황인성', role: '동장 / 개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 황인성입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '조현석', role: '창동장 / 디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 조현석입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '양신우', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 양신우입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '김민경', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 김민경입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 임다솔입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '서은찬', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 서은찬입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '주윤성', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 주윤성입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '손연우', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 손연우입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '민수연', role: '동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 민수연입니다.', image: 'images/Sym.png' },
+  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 이주은입니다.', image: 'images/Jueun.png' },
+  { name: '양세린', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 양세린입니다.', image: 'images/Saerine.png' },
+  { name: '김서윤', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 김서윤입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '장세혁', role: '기획', tags: ['1기'], bio: '테토남', image: 'images/Saeping.png' }
 ];
 
 let __memberActiveFilter = null; // 선택된 필터 id (null이면 전체)
@@ -1053,6 +1093,13 @@ function renderMemberGrid() {
   if (!grid || !tpl) return;
 
   // 그리드 페이드 아웃 → 데이터 교체 → 페이드 인 애니메이션
+  function setMemberImage(node, m) {
+    const imgEl = node.querySelector('.member-image');
+    if (imgEl && m.image) {
+      imgEl.src = m.image;
+      imgEl.alt = m.name || '';
+    }
+  }
   if (typeof gsap !== 'undefined') {
     gsap.to(grid, { opacity: 0, duration: 0.18, onComplete: () => {
       grid.innerHTML = '';
@@ -1065,6 +1112,7 @@ function renderMemberGrid() {
       const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
       useData.forEach((m) => {
         const node = tpl.content.cloneNode(true);
+        setMemberImage(node, m);
         const nameEl = node.querySelector('.member-name');
         const bioEl = node.querySelector('.member-bio');
         const tagsWrap = node.querySelector('.member-tags');
@@ -1101,6 +1149,7 @@ function renderMemberGrid() {
     const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
     useData.forEach((m) => {
       const node = tpl.content.cloneNode(true);
+      setMemberImage(node, m);
       const nameEl = node.querySelector('.member-name');
       const bioEl = node.querySelector('.member-bio');
       const tagsWrap = node.querySelector('.member-tags');
@@ -1141,7 +1190,10 @@ function renderMemberGrid() {
         const perRow = 50; // vh
         const minVh = base + perRow * (rows - 1);
         // 콘텐츠가 더 길면 자연 높이를 우선하므로 min-height만 설정
-        document.body.style.minHeight = `${minVh}vh`;
+        // 멤버 탭에 있을 때만 min-height를 동적으로 조정
+        if (document.body.classList.contains('member-mode')) {
+          document.body.style.minHeight = `${minVh}vh`;
+        }
       }
 
 function initMemberSection() {
@@ -1175,7 +1227,7 @@ function setupResultCheck() {
   const btn = document.getElementById('checkResultBtn');
   if (!btn) return;
   __resultCheckBound = true;
-  btn.addEventListener('click', () => {
+  function handleResultCheck() {
     if (!isResultCheckPeriod) {
       alert('현재는 합격자 확인 기간이 아닙니다.');
       return;
@@ -1194,8 +1246,37 @@ function setupResultCheck() {
       showSection('result-pass');
     } else if (isFailed) {
       showSection('result-fail');
+      setTimeout(() => {
+        // 이름을 입력값 그대로 사용
+        const failMsg = document.getElementById('resultFailMessage');
+        if (failMsg) {
+          failMsg.innerHTML =
+            `<span class=\"fail-main\"><span class='fail-name'>${name} 님</span>은 SUMMIT 2기 모집에 최종 <span class='fail-red'>불합격</span>하셨습니다.</span>` +
+            `<span class=\"fail-sub\">약 20분 후, 기재해 주신 전화번호로 안내 문자가 발송됩니다.</span>` +
+            `<span class=\"fail-sub\">다시 한번 지원해 주셔서 감사드리며,<br>앞으로의 도전과 활동을 진심으로 응원합니다.</span>`;
+        }
+      }, 10);
     } else {
       alert('명단에 없는 정보입니다. 학번과 이름을 다시 확인하세요.');
+    }
+  }
+
+  btn.addEventListener('click', handleResultCheck);
+
+  // Enter key triggers result check if both fields are filled
+  const idInput = document.getElementById('studentId');
+  const nameInput = document.getElementById('studentName');
+  [idInput, nameInput].forEach(input => {
+    if (input) {
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const id = String(idInput && idInput.value ? idInput.value : '').trim();
+          const name = String(nameInput && nameInput.value ? nameInput.value : '').trim();
+          if (id && name) {
+            handleResultCheck();
+          }
+        }
+      });
     }
   });
 }
