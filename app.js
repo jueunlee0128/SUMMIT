@@ -1,3 +1,30 @@
+// ===== 프로젝트 카드 동적 추가 함수 =====
+function addProjectCard({ name, year, desc }) {
+  const grid = document.querySelector('.project-grid');
+  const template = document.getElementById('project-card-template');
+  if (!grid || !template) return;
+  const node = template.content.cloneNode(true);
+  node.querySelector('.project-name').textContent = name;
+  node.querySelector('.project-meta').textContent = year;
+  node.querySelector('.project-desc').textContent = desc;
+  grid.appendChild(node);
+}
+
+// 예시: DOMContentLoaded 시 9개 카드 추가
+document.addEventListener('DOMContentLoaded', () => {
+  const exampleProjects = [
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+  ];
+  exampleProjects.forEach(addProjectCard);
+});
 // ===== 입력 칸 포커스 시 snake-border 확장 애니메이션 =====
 function setupSnakeBorderInputFocus() {
   const inputs = document.querySelectorAll('.result-input');
@@ -16,6 +43,31 @@ function setupSnakeBorderInputFocus() {
 // DOMContentLoaded 이후에 실행
 document.addEventListener('DOMContentLoaded', () => {
   setupSnakeBorderInputFocus();
+  // 홈 섹션 아래로 스크롤 유도 화살표 표시
+  const homeSection = document.getElementById('home-section');
+  const scrollArrow = document.getElementById('scrollDownArrow');
+  if (homeSection && scrollArrow) {
+    // 홈 섹션이 보일 때만 화살표 표시
+    const showArrow = () => {
+      if (homeSection.style.display !== 'none' && homeSection.classList.contains('active-home')) {
+        scrollArrow.style.display = 'block';
+      } else {
+        scrollArrow.style.display = 'none';
+      }
+    };
+    // 탭 전환 등에서 호출될 수 있도록 이벤트 바인딩
+    const observer = new MutationObserver(showArrow);
+    observer.observe(homeSection, { attributes: true, attributeFilter: ['class', 'style'] });
+    showArrow();
+    // 스크롤이 일정 이상 내려가면 화살표 숨김
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 120) {
+        scrollArrow.style.opacity = 0;
+      } else {
+        scrollArrow.style.opacity = 0.85;
+      }
+    });
+  }
 });
 // ===== 동아리 신청/합격자 확인 기간 설정 =====
 const isRecruitmentPeriod = false;   // true: 모집 신청 기간
@@ -23,14 +75,14 @@ const isResultCheckPeriod = true;  // true: 합격자 확인 기간
 
 
 // ===== 합격/불합격자 데이터 저장 =====
-// 아래 배열에 합격자와 불합격자의 학번(id)과 이름(name)을 각각 추가하세요.
-// 예: { id: '2026-001', name: '홍길동' }
+// 아래 배열에 합격자와 불합격자의 학번(id), 이름(name), 전화번호(phone)을 각각 추가하세요.
+// 예: { id: '2026-001', name: '홍길동', phone: '01012345678' }
 const ACCEPTED_STUDENTS = [
-  // { id: '2026-001', name: '홍길동' },
-  { id: '1419', name: '이주은'},
+  // { id: '2026-001', name: '홍길동', phone: '01012345678' },
+  { id: '1419', name: '이주은', phone: '01011112222'},
 ];
 const FAILED_STUDENTS = [
-  { id: '2417', name: '이주은'},
+  { id: '2417', name: '이주은', phone: '01033334444'},
 ];
 
 // ===== 홈 스크롤 페이드 설정 =====
@@ -1237,29 +1289,115 @@ function setupResultCheck() {
     const id = String(idInput && idInput.value ? idInput.value : '').trim();
     const name = String(nameInput && nameInput.value ? nameInput.value : '').trim();
     if (!id || !name) {
-      alert('학번과 이름을 모두 입력하세요.');
+      showResultError('학번과 이름을 모두 입력하세요.');
       return;
     }
-    const isAccepted = ACCEPTED_STUDENTS.some(s => String(s.id).trim() === id && String(s.name).trim() === name);
-    const isFailed = FAILED_STUDENTS.some(s => String(s.id).trim() === id && String(s.name).trim() === name);
-    if (isAccepted) {
-      showSection('result-pass');
-    } else if (isFailed) {
-      showSection('result-fail');
-      setTimeout(() => {
-        // 이름을 입력값 그대로 사용
-        const failMsg = document.getElementById('resultFailMessage');
-        if (failMsg) {
-          failMsg.innerHTML =
-            `<span class=\"fail-main\"><span class='fail-name'>${name} 님</span>은 SUMMIT 2기 모집에 최종 <span class='fail-red'>불합격</span>하셨습니다.</span>` +
-            `<span class=\"fail-sub\">약 20분 후, 기재해 주신 전화번호로 안내 문자가 발송됩니다.</span>` +
-            `<span class=\"fail-sub\">다시 한번 지원해 주셔서 감사드리며,<br>앞으로의 도전과 활동을 진심으로 응원합니다.</span>`;
+    // 학생 데이터 찾기
+    let student = ACCEPTED_STUDENTS.find(s => String(s.id).trim() === id && String(s.name).trim() === name);
+    let isAccepted = !!student;
+    if (!student) {
+      student = FAILED_STUDENTS.find(s => String(s.id).trim() === id && String(s.name).trim() === name);
+    }
+    let isFailed = !!student && !isAccepted;
+    if (!student) {
+      showResultError('명단에 없는 정보입니다. 학번과 이름을 다시 확인하세요.');
+      return;
+    }
+    // 전화번호 입력 모달 띄우기
+    const phoneModalBg = document.getElementById('modal-phone-bg');
+    const phoneInput = document.getElementById('studentPhoneInput');
+    const phoneModalClose = document.getElementById('modal-phone-close');
+    const phoneModalCancel = document.getElementById('modal-phone-cancel');
+    if (phoneModalBg && phoneInput && phoneModalClose && phoneModalCancel) {
+      phoneModalBg.style.display = 'flex';
+      phoneInput.value = '';
+      setTimeout(function() { phoneInput.focus(); }, 80);
+      function closeModal() {
+        phoneModalBg.style.display = 'none';
+        phoneModalClose.removeEventListener('click', verifyPhone);
+        phoneModalCancel.removeEventListener('click', cancelModal);
+        document.removeEventListener('keydown', escListener);
+      }
+      function escListener(e) {
+        if (e.key === 'Escape') closeModal();
+      }
+      function verifyPhone() {
+        const inputPhone = String(phoneInput.value).replace(/\D/g, '');
+        if (inputPhone === student.phone) {
+          closeModal();
+          if (isAccepted) {
+            showSection('result-pass');
+            setTimeout(() => {
+              const nameAccent = document.querySelector('#result-pass-section .name-accent');
+              if (nameAccent) {
+                nameAccent.textContent = name + ' 님';
+              }
+            }, 10);
+          } else if (isFailed) {
+            showSection('result-fail');
+            setTimeout(() => {
+              const failMsg = document.getElementById('resultFailMessage');
+              if (failMsg) {
+                failMsg.innerHTML =
+                  `<span class=\"fail-main\"><span class='fail-name'>${name} 님</span>은 SUMMIT 2기 모집에 최종 <span class='fail-red'>불합격</span>하셨습니다.</span>` +
+                  `<span class=\"fail-sub\">약 20분 후, 기재해 주신 전화번호로 안내 문자가 발송됩니다.</span>` +
+                  `<span class=\"fail-sub\">다시 한번 지원해 주셔서 감사드리며,<br>앞으로의 도전과 활동을 진심으로 응원합니다.</span>`;
+              }
+            }, 10);
+          }
+        } else {
+          showResultError('전화번호가 일치하지 않습니다. 다시 입력하세요.');
         }
-      }, 10);
-    } else {
-      alert('명단에 없는 정보입니다. 학번과 이름을 다시 확인하세요.');
+      }
+      function cancelModal() {
+        closeModal();
+      }
+      phoneModalClose.addEventListener('click', verifyPhone);
+      phoneModalCancel.addEventListener('click', cancelModal);
+      document.addEventListener('keydown', escListener);
+      // 중복 방지: 기존 keydown 리스너 제거 후 추가
+      if (phoneInput._enterHandler) {
+        phoneInput.removeEventListener('keydown', phoneInput._enterHandler);
+      }
+      phoneInput._enterHandler = function(e) {
+        if (e.key === 'Enter') {
+          if (e.shiftKey || e.ctrlKey) {
+            // Shift+Enter 또는 Ctrl+Enter는 취소로 처리
+            cancelModal();
+          } else {
+            verifyPhone();
+            phoneInput.blur();
+          }
+        }
+      };
+      phoneInput.addEventListener('keydown', phoneInput._enterHandler);
     }
   }
+
+  // 에러 모달 노출 함수
+  function showResultError(msg) {
+    var modalBg = document.getElementById('modal-error-bg');
+    var modalMsg = document.getElementById('modal-error-message');
+    var modalClose = document.getElementById('modal-error-close');
+    if (modalBg && modalMsg && modalClose) {
+      modalMsg.textContent = msg;
+      modalBg.style.display = 'flex';
+      // 포커스 이동
+      setTimeout(function() { modalClose.focus(); }, 80);
+      // 닫기 버튼 이벤트
+      function closeModal() {
+        modalBg.style.display = 'none';
+        modalClose.removeEventListener('click', closeModal);
+        document.removeEventListener('keydown', escListener);
+      }
+      function escListener(e) {
+        if (e.key === 'Escape') closeModal();
+      }
+      modalClose.addEventListener('click', closeModal);
+      document.addEventListener('keydown', escListener);
+    }
+  }
+  
 
   btn.addEventListener('click', handleResultCheck);
 
@@ -1364,3 +1502,237 @@ function setupResultHomeLogo() {
     });
   });
 }
+
+// ===== 최종 합격자 섹션 막대 애니메이션 =====
+function animateResultPassBars() {
+  const barsBg = document.querySelector('.result-pass-bars-bg');
+  if (!barsBg) return;
+  const svg = barsBg.querySelector('svg');
+  if (!svg) return;
+  const bars = svg.querySelectorAll('.bar');
+  if (!bars.length) return;
+  // 각 막대의 원래 y, height 저장
+  const barData = [
+    { y: 230, height: 280 },
+    { y: 160, height: 250 },
+    { y: 280, height: 170 },
+    { y: 0,   height: 380 }
+  ];
+  bars.forEach((bar, i) => {
+    bar.setAttribute('height', 0);
+    bar.setAttribute('y', barData[i].y + barData[i].height);
+  });
+  bars.forEach((bar, i) => {
+    setTimeout(() => {
+      if (typeof gsap !== 'undefined') {
+        gsap.to(bar, {
+          attr: {
+            height: barData[i].height,
+            y: barData[i].y
+          },
+          duration: 1, // 느리게
+          ease: 'power2.out',
+          onComplete: () => {
+            // 마지막 막대가 끝나면 컨페티 실행
+            if (i === bars.length - 1) {
+              setTimeout(launchConfetti, 50);
+            }
+          }
+        });
+      } else {
+        bar.style.transition = 'height 0.7s, y 0.7s cubic-bezier(0.4,0,0.2,1)';
+        bar.setAttribute('height', barData[i].height);
+        bar.setAttribute('y', barData[i].y);
+        if (i === bars.length - 1) {
+          setTimeout(launchConfetti, 1400);
+        }
+      }
+    }, 250 + i * 350); // 딜레이도 더 느리게
+  });
+}
+
+// ===== 컨페티 폭죽 애니메이션 =====
+function launchConfetti() {
+  if (document.getElementById('confetti-canvas')) return;
+  const canvas = document.createElement('canvas');
+  canvas.id = 'confetti-canvas';
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '9999';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  let W = window.innerWidth;
+  let H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+
+  // 컨페티 파티클 생성
+  const colors = ['#D61F26', '#fff']; // 흰색, 빨간색만 사용
+  const confettiCount = 500; // 컨페티 양 극대화
+  let confetti = [];
+  let phase = 'burst';
+  function createBurstConfetti() {
+    const arr = [];
+    for (let i = 0; i < confettiCount; i++) {
+      let x, angle;
+      if (i % 2 === 0) {
+        x = 0;
+        angle = (Math.PI / 3) + (Math.random() * (Math.PI / 3));
+      } else {
+        x = W;
+        angle = (2 * Math.PI / 3) - (Math.random() * (Math.PI / 3));
+      }
+      // burst 속도와 중력을 높임(더 빠르게)
+      const speed = 15 + Math.random() * 7; // burst 속도 대폭 증가
+      const startY = H * (0.95 + Math.random() * 0.1); // 다시 아래에서 쏘도록 복구
+      arr.push({
+        x: x,
+        y: startY,
+        w: 6 + Math.random() * 14,
+        h: 2 + Math.random() * 8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: Math.cos(angle) * speed * (1.3 + Math.random() * 0.9),
+        vy: -Math.sin(angle) * speed * (2.2 + Math.random() * 1.0),
+        gravity: 0.28 + Math.random() * 0.13, // burst 중력도 증가
+        rotate: Math.random() * Math.PI * 2,
+        rotateSpeed: (Math.random() - 0.5) * 0.1,
+        alpha: 1,
+        spreadX: (() => {
+          const edgeRatio = 0.18;
+          const r = Math.random();
+          if (r < 0.18) {
+            return Math.random() * (W * edgeRatio);
+          } else if (r > 0.82) {
+            return W * (1 - edgeRatio) + Math.random() * (W * edgeRatio);
+          } else {
+            return W * edgeRatio + Math.random() * (W * (1 - 2 * edgeRatio));
+          }
+        })(),
+      });
+    }
+    return arr;
+  }
+  // burst에서 사용한 confetti 배열을 그대로 fall로 넘기고, 속도/중력만 fall용으로 변환
+  function convertBurstToFallConfetti(confettiArr) {
+    return confettiArr.map((c, i) => ({
+      ...c,
+      y: -100 - Math.random() * 400, // fall phase에서 burst 컨페티도 중앙 컨페티와 동일한 위치에서 떨어지게 함
+      vx: Math.sin(i) * 0.3 + (Math.random() - 0.5) * 0.7,
+      vy: 0.11 + Math.random() * 0.13, // 더 천천히 떨어지게
+      gravity: 0.004 + Math.random() * 0.007, // 더 천천히 떨어지게
+      swayPhase: Math.random() * Math.PI * 2,
+      swayAmp: 0.7 + Math.random() * 1.2
+    }));
+  }
+
+  // fall phase에서 화면 중앙 confetti도 사이드처럼 화면 밖 위쪽(y < -200)에서부터 자연스럽게 내려오게 생성
+  function createCenterFallConfetti(count) {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      arr.push({
+        x: W * 0.35 + Math.random() * W * 0.3, // 중앙 30% 영역
+        y: -100 - Math.random() * 400, // 중앙 confetti도 더 낮은 곳에서 시작
+        w: 6 + Math.random() * 14,
+        h: 2 + Math.random() * 8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: 0.11 + Math.random() * 0.13, // 더 천천히 떨어지게
+        gravity: 0.004 + Math.random() * 0.007, // 더 천천히 떨어지게
+        rotate: Math.random() * Math.PI * 2,
+        rotateSpeed: (Math.random() - 0.5) * 0.1,
+        alpha: 1,
+        swayPhase: Math.random() * Math.PI * 2,
+        swayAmp: 0.7 + Math.random() * 1.2
+      });
+    }
+    return arr;
+  }
+  confetti = createBurstConfetti();
+
+  function drawConfetti() {
+    ctx.clearRect(0, 0, W, H);
+    confetti.forEach(c => {
+      ctx.save();
+      ctx.globalAlpha = c.alpha;
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rotate);
+      ctx.fillStyle = c.color;
+      ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+      ctx.restore();
+    });
+  }
+
+  // burst phase가 끝나면 fall phase를 약간 딜레이 후 시작
+  let burstEnd = false;
+  let fallStartTimeout = null;
+  function updateConfetti() {
+    if (phase === 'burst') {
+      confetti.forEach(c => {
+        // burst phase에서는 vy가 0을 넘더라도 fall 속도로 전환하지 않음
+        // 오직 burst 속도와 중력만 적용
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += c.gravity;
+        c.rotate += c.rotateSpeed;
+      });
+      // burst phase가 끝났는지 체크: 모든 confetti가 화면 위(y < -200)로 나가면 다음 phase로
+      if (!burstEnd && confetti.every(c => c.y < -200)) {
+        burstEnd = true;
+        // burst phase가 끝나면 confetti의 위치/회전/투명도 등은 그대로 두고 속도만 fall용으로 변환
+        const burstConfettiSnapshot = confetti.map(c => ({...c}));
+        fallStartTimeout = setTimeout(() => {
+          phase = 'fall';
+          // burst에서 변환된 confetti + 중앙 위쪽에서 추가 생성된 confetti를 합침
+          const centerCount = Math.floor(confettiCount * 0.5); // 전체의 50%만큼 추가로 더 많이 생성
+          confetti = convertBurstToFallConfetti(burstConfettiSnapshot).concat(createCenterFallConfetti(centerCount));
+        }, 150); // 0.15초 후 fall phase 시작(간격을 더 짧게)
+      }
+    } else if (phase === 'fall') {
+      confetti.forEach(c => {
+        // 자연스러운 좌우 흔들림
+        c.x += c.vx + Math.sin(Date.now() / 400 + c.swayPhase) * c.swayAmp * 0.2;
+        c.y += c.vy;
+        c.vy += c.gravity;
+        c.rotate += c.rotateSpeed;
+        if (c.y > H + 20) {
+          c.alpha -= 0.02; // 더 천천히 사라지게
+        }
+      });
+    }
+  }
+
+  function loop() {
+    drawConfetti();
+    updateConfetti();
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  setTimeout(() => {
+    canvas.remove();
+  }, 20000); // 애니메이션 유지 시간 10초로 증가
+}
+
+// 최종 합격자 섹션이 보일 때 막대 애니메이션 트리거
+function setupResultPassBarAnimation() {
+  const passSection = document.getElementById('result-pass-section');
+  if (!passSection) return;
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((m) => {
+      if (passSection.style.display !== 'none') {
+        animateResultPassBars();
+      }
+    });
+  });
+  observer.observe(passSection, { attributes: true, attributeFilter: ['style'] });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupSnakeBorderInputFocus();
+  setupResultPassBarAnimation();
+});
