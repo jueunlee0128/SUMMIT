@@ -858,7 +858,7 @@ body.loaded .content:not(.section) {
     color: #FFFFFF;
     background: var(--primary);
     border: none;
-    box-shadow: 0 0 16px 10px rgba(195, 14, 35, 0.38), 0 10px 20px rgba(195, 14, 35, 0.35);
+    box-shadow: 0 0 8px 6px rgba(195, 14, 35, 0.38), 0 6px 16px rgba(195, 14, 35, 0.35);
     /* 리드 태그는 더 강한 빛 효과 */
     position: relative;
     z-index: 2;
