@@ -1,5 +1,5 @@
 // ===== 프로젝트 카드 동적 추가 함수 =====
-function addProjectCard({ name, year, desc }) {
+function addProjectCard({ name, year, desc, images }) {
   const grid = document.querySelector('.project-grid');
   const template = document.getElementById('project-card-template');
   if (!grid || !template) return;
@@ -7,23 +7,115 @@ function addProjectCard({ name, year, desc }) {
   node.querySelector('.project-name').textContent = name;
   node.querySelector('.project-meta').textContent = year;
   node.querySelector('.project-desc').textContent = desc;
+  // 이미지 배열이 있으면 첫 번째 이미지만 표시
+  if (images && images.length > 0) {
+    const photoDiv = node.querySelector('.project-photo');
+    if (photoDiv) {
+      const img = document.createElement('img');
+      img.src = images[0];
+      img.alt = name;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      photoDiv.appendChild(img);
+    }
+  }
   grid.appendChild(node);
 }
 
 // 예시: DOMContentLoaded 시 9개 카드 추가
 document.addEventListener('DOMContentLoaded', () => {
   const exampleProjects = [
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
-    { name: 'SUMMIT', year: '2025년', desc: '모의투자를 더 편하게! 대충 설명입니다.' },
+    { name: 'SUMMIT1', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/Jueun.png', 'images/Imda.png'] },
+    { name: 'SUMMIT2', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project2.jpg'] },
+    { name: 'SUMMIT3', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project3.jpg', 'images/project3-2.jpg', 'images/project3-3.jpg'] },
+    { name: 'SUMMIT4', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project4.jpg'] },
+    { name: 'SUMMIT5', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project5.jpg', 'images/project5-2.jpg'] },
+    { name: 'SUMMIT6', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project6.jpg'] },
   ];
-  exampleProjects.forEach(addProjectCard);
+
+  // 칩 필터 생성
+  const years = ['전체', '2026년', '2025년'];
+  const chipTemplate = document.getElementById('project-chip-template');
+  const chipContainer = document.querySelector('.project-filters');
+  let selectedYear = '전체';
+  function renderChips() {
+    chipContainer.innerHTML = '';
+    years.forEach(year => {
+      const chipNode = chipTemplate.content.cloneNode(true);
+      const chipBtn = chipNode.querySelector('.project-chip');
+      chipBtn.textContent = year;
+      chipBtn.classList.toggle('active', year === selectedYear);
+      chipBtn.addEventListener('click', () => {
+        if (selectedYear === year) return; // Prevent re-render if same chip
+        selectedYear = year;
+        renderChips();
+        renderProjectCards();
+      });
+      chipContainer.appendChild(chipBtn);
+    });
+  }
+
+  function renderProjectCards() {
+    const grid = document.querySelector('.project-grid');
+    // Fade out existing cards
+    const cards = Array.from(grid.children);
+    const filtered = exampleProjects.filter(p => selectedYear === '전체' ? true : p.year === selectedYear);
+    if (cards.length > 0) {
+      cards.forEach(card => card.classList.add('fade-out'));
+      setTimeout(() => {
+        grid.innerHTML = '';
+        if (filtered.length === 0 && selectedYear !== '전체') {
+          const msg = document.createElement('div');
+          msg.className = 'project-empty-message';
+          msg.textContent = `${selectedYear}의 SUMMIT을 기대해주세요!`;
+          grid.appendChild(msg);
+        } else {
+          filtered.forEach(data => {
+            addProjectCard(data);
+            const newCard = grid.lastElementChild;
+            if (newCard) {
+              newCard.style.opacity = '0';
+              void newCard.offsetWidth;
+              newCard.classList.add('fade-in');
+              setTimeout(() => {
+                newCard.classList.remove('fade-in');
+                newCard.style.opacity = '';
+              }, 100);
+            }
+          });
+        }
+        updateProjectScrollPadding();
+      }, 120);
+    } else {
+      grid.innerHTML = '';
+      if (filtered.length === 0 && selectedYear !== '전체') {
+        const msg = document.createElement('div');
+        msg.className = 'project-empty-message';
+        msg.textContent = `${selectedYear}의 SUMMIT을 기대해주세요!`;
+        grid.appendChild(msg);
+      } else {
+        filtered.forEach(data => {
+          addProjectCard(data);
+          const newCard = grid.lastElementChild;
+          if (newCard) {
+            newCard.style.opacity = '0';
+            void newCard.offsetWidth;
+            newCard.classList.add('fade-in');
+            setTimeout(() => {
+              newCard.classList.remove('fade-in');
+              newCard.style.opacity = '';
+            }, 380);
+          }
+        });
+      }
+      updateProjectScrollPadding();
+    }
+  } 
+
+  // 초기 렌더링
+  renderChips();
+  renderProjectCards();
 });
 // ===== 입력 칸 포커스 시 snake-border 확장 애니메이션 =====
 function setupSnakeBorderInputFocus() {
@@ -117,15 +209,11 @@ function saveCurrentTabScroll() {
 }
 
 function restoreTabScroll(tab) {
-  // 홈 탭은 항상 0, 그 외는 저장된 위치로 복원
-  let y = 0;
-  if (tab !== 'home' && __tabScrollY.hasOwnProperty(tab)) {
-    y = __tabScrollY[tab] || 0;
-  }
+  // 항상 스크롤을 0으로 이동
   if (__lenisInstance && typeof __lenisInstance.scrollTo === 'function') {
-    __lenisInstance.scrollTo(y, { immediate: true });
+    __lenisInstance.scrollTo(0, { immediate: true });
   } else {
-    window.scrollTo(0, y);
+    window.scrollTo(0, 0);
   }
 }
 
@@ -280,6 +368,7 @@ function initSmoothScrolling() {
   });
 
   __lenisInstance = lenis;
+  window.__lenisInstance = lenis;
 
   // GSAP ScrollTrigger와 Lenis를 동기화
   lenis.on('scroll', ScrollTrigger.update);
@@ -646,6 +735,12 @@ function showSection(sectionName) {
   setTimeout(() => {
     const targetSection = document.getElementById(targetId);
     targetSection.style.display = 'flex';
+    // 탭 진입 시 항상 스크롤 상단으로 이동
+    if (window.__lenisInstance && typeof window.__lenisInstance.scrollTo === 'function') {
+      window.__lenisInstance.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
     setTimeout(() => {
       const activeClass = `active-${sectionName}`;
       targetSection.classList.add(activeClass);
@@ -681,6 +776,19 @@ function showSection(sectionName) {
             mascot.classList.add('active-mascot');
           }
         }
+          // 디버깅: 홈 탭 진입 시 상태 출력
+          const homeSection = document.getElementById('home-section');
+          console.log('[홈탭 진입]');
+          console.log('body.classList:', Array.from(document.body.classList));
+          console.log('body.style.minHeight:', document.body.style.minHeight);
+          console.log('body CSS min-height:', getComputedStyle(document.body).minHeight);
+          if (homeSection) {
+            console.log('homeSection.style.display:', homeSection.style.display);
+            console.log('homeSection.classList:', Array.from(homeSection.classList));
+          }
+          console.log('homeScrollEnabled:', homeScrollEnabled);
+          console.log('__homeScrollSource:', __homeScrollSource);
+          console.log('__homeScrollHandler:', __homeScrollHandler);
       } else {
         document.body.classList.remove('home-mode');
         disableHomeScroll();
@@ -713,10 +821,11 @@ function showSection(sectionName) {
           mascot.classList.remove('active-mascot');
           mascot.style.display = 'none';
         }
-        // QnA/Member 탭은 스크롤 여유 제공 (한 화면 높이 추가) 및 섹션별 초기화
+        // QnA/Member/Project 탭은 스크롤 여유 제공 (한 화면 높이 추가) 및 섹션별 초기화
         if (sectionName === 'qna') {
           document.body.classList.add('qna-mode');
           document.body.classList.remove('member-mode');
+          document.body.classList.remove('project-mode');
           document.body.style.minHeight = '200vh';
           // QnA 아코디언 초기화
           if (typeof initQnaAccordion === 'function') {
@@ -725,6 +834,7 @@ function showSection(sectionName) {
         } else if (sectionName === 'member') {
           document.body.classList.add('member-mode');
           document.body.classList.remove('qna-mode');
+          document.body.classList.remove('project-mode');
           // 멤버 탭은 카드 개수에 따라 스크롤 여유를 동적으로 계산
           // 멤버 섹션 초기화 (필터 + 그리드)
           initMemberSection();
@@ -737,14 +847,29 @@ function showSection(sectionName) {
               if (__currentTab === 'member') updateMemberScrollPadding();
             });
           }
+        } else if (sectionName === 'project') {
+            document.body.classList.add('project-mode');
+            document.body.classList.remove('qna-mode');
+            document.body.classList.remove('member-mode');
+            // 프로젝트 탭은 카드 개수에 따라 스크롤 여유를 동적으로 계산
+            updateProjectScrollPadding();
+            // 리사이즈 시에도 재계산 (중복 등록 방지)
+            if (!window.__projectResizeBound) {
+              window.__projectResizeBound = true;
+              window.addEventListener('resize', () => {
+                if (__currentTab === 'project') updateProjectScrollPadding();
+              });
+            }
         } else if (sectionName === 'result' || sectionName === 'result-pass' || sectionName === 'result-fail') {
           // 결과 확인 탭은 특별 초기화 없음
           document.body.classList.remove('qna-mode');
           document.body.classList.remove('member-mode');
+          document.body.classList.remove('project-mode');
           document.body.style.minHeight = '';
         } else {
           document.body.classList.remove('qna-mode');
           document.body.classList.remove('member-mode');
+          document.body.classList.remove('project-mode');
           document.body.style.minHeight = '';
         }
 
@@ -919,9 +1044,6 @@ function updateLoading() {
     setTimeout(() => {
       // 로딩창 숨김
       document.querySelector('.logo-container').classList.add('fade-out');
-
-
-
       // 1단계: display 변경 (중앙 요소는 opacity 0, y 20px로 세팅)
       document.querySelector('.top-left-logo').style.display = 'block';
       document.querySelector('.top-right-nav').style.display = 'flex';
@@ -1076,12 +1198,12 @@ const MEMBERS = [
   { name: '조현석', role: '창동장 / 디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 조현석입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '양신우', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 양신우입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '김민경', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 김민경입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 임다솔입니다.', image: 'images/SummitMainLogo1.png' },
+  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '23기 학홍 팀장', image: 'images/Imda.png' },
   { name: '서은찬', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 서은찬입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '주윤성', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 주윤성입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '손연우', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 손연우입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '민수연', role: '동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 민수연입니다.', image: 'images/Sym.png' },
-  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 이주은입니다.', image: 'images/Jueun.png' },
+  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '서밋 잡일 담당 바지사장🥲', image: 'images/Jueun.png' },
   { name: '양세린', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 양세린입니다.', image: 'images/Saerine.png' },
   { name: '김서윤', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 김서윤입니다.', image: 'images/SummitMainLogo1.png' },
   { name: '장세혁', role: '기획', tags: ['1기'], bio: '테토남', image: 'images/Saeping.png' }
@@ -1127,6 +1249,7 @@ function renderMemberFilters() {
     btn.classList.add(f.variant === 'primary' ? 'chip-primary' : 'chip-muted');
     if (__memberActiveFilter === f.id) btn.classList.add('active');
     btn.addEventListener('click', () => {
+      if (__memberActiveFilter === f.id) return; // Prevent re-render if same chip
       __memberActiveFilter = f.id;
       // active 상태 업데이트
       wrap.querySelectorAll('.member-chip').forEach(el => el.classList.remove('active'));
@@ -1247,6 +1370,27 @@ function renderMemberGrid() {
           document.body.style.minHeight = `${minVh}vh`;
         }
       }
+
+        // ===== Project: dynamic scroll padding based on rows =====
+        function updateProjectScrollPadding() {
+          const section = document.getElementById('project-section');
+          if (!section) return;
+          const grid = section.querySelector('.project-grid');
+          if (!grid) return;
+          const count = grid.children.length;
+          // CSS 브레이크포인트에 맞춘 컬럼 계산
+          const w = window.innerWidth || document.documentElement.clientWidth || 0;
+          const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
+          const rows = Math.max(1, Math.ceil(count / cols));
+          // 최소 스크롤 여유: 1행일 때 100vh, 추가 행마다 50vh 가산
+          const base = 100; // vh
+          const perRow = 50; // vh
+          const minVh = base + perRow * (rows - 1);
+          // 프로젝트 탭에 있을 때만 min-height를 동적으로 조정
+          if (document.body.classList.contains('project-mode')) {
+            document.body.style.minHeight = `${minVh}vh`;
+          }
+        }
 
 function initMemberSection() {
   // 처음 진입 시 가장 높은 기수 탭을 기본 활성화

@@ -134,17 +134,22 @@
     </div>
 
     <!-- 프로젝트 섹션 -->
-    <div class="content center-content section project" id="project-section" style="display: none;">
+    <div class="content center-content section project" id="project-section">
         <div class="project-container">
             <h2 class="project-title">프로젝트</h2>
+            <div class="project-filters"></div>
+            <!-- 필터 칩 템플릿 -->
+            <template id="project-chip-template">
+                <button class="project-chip" type="button"></button>
+            </template>
             <div class="project-grid"></div>
             <!-- 템플릿: 자바스크립트로 복제하여 그리드에 추가 -->
             <template id="project-card-template">
                 <div class="project-card">
                     <div class="project-photo" aria-label="project image placeholder"></div>
                     <div class="project-info">
-                        <h3 class="project-name"></h3>
                         <div class="project-meta"></div>
+                        <p class="project-name"></p>
                         <p class="project-desc"></p>
                     </div>
                 </div>
@@ -325,6 +330,16 @@
                             </div>
                         </div>
         </div>
+    </div>
+    <!-- 프로젝트 세부 탭 -->
+    <div class="content section project-detail" id="project-detail-section" style="display: none; flex-direction: column; align-items: center;">
+        <div class="detail-header">
+            <span class="detail-year"></span>
+            <h2 class="detail-title"></h2>
+        </div>
+        <div class="detail-images" style="display: flex; gap: 16px; margin: 24px 0;"></div>
+        <div class="detail-desc" style="font-size: 1.2em; color: #fff; margin-bottom: 32px;"></div>
+        <button class="detail-back-btn" onclick="document.getElementById('project-detail-section').style.display='none';document.getElementById('project-section').style.display='flex';">돌아가기</button>
     </div>
 
     <script src="app.js"></script>

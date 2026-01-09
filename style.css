@@ -1,10 +1,37 @@
+/* 프로젝트 탭도 스크롤 공간 확보 */
+body.loaded.project-mode {
+    min-height: 200vh; /* 멤버 탭과 동일하게 프로젝트 탭도 스크롤 여유 확보 */
+}
+/* 프로젝트 섹션 레이아웃을 멤버 섹션과 동일하게 */
+.content.section.project,
+#project-section {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 120px 0;
+}
+/* 프로젝트 섹션도 전체 스크롤 적용 */
+.content.center-content.section.project {
+    min-height: 100vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
 /* 프로젝트 카드 그리드 (멤버 카드 스타일 참고) */
 .project-container {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
-    padding-top: 80px;
+    width: calc(100% - 160px);
+    max-width: 1200px;
+    margin: 0 auto;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* overflow: visible; */
 }
 .project-title {
     margin: 0 0 32px;
@@ -13,18 +40,27 @@
     font-weight: 800;
     font-size: clamp(28px, 4.4vw, 44px);
     letter-spacing: 0.5px;
+    /* 멤버 타이틀과 동일하게 위치 조정 */
+    display: block;
+    width: 100%;
+    position: relative;
 }
 .project-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 48px;
-    width: 100vw;
+    gap: 28px;
+    width: 100%;
     box-sizing: border-box;
-    padding: 0 2vw 0 2vw;
-    max-height: 600px;
-    overflow-y: auto;
+    padding: 0;
+    /* overflow-y: visible; */
 }
+/* 더 빠른 등장/퇴장 애니메이션 */
 .project-card {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 0.16s cubic-bezier(0.4,0,0.2,1),
+        transform 0.16s cubic-bezier(0.4,0,0.2,1);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -32,24 +68,76 @@
     border-radius: 24px;
     background: transparent;
 }
+
+
+.project-card.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.project-card.fade-in {
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .project-photo {
-    width: clamp(180px, 26vw, 300px);
-    aspect-ratio: 1 / 1;
+    width: clamp(180px, 26vw, 360px);
+    aspect-ratio: 5 / 3.3;
     height: auto;
-    border-radius: 28px;
+    border-radius: 18px;
     background: #bdbdbd;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: none;
     box-shadow: 0 16px 30px rgba(0,0,0,0.18);
-    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
 }
-.project-info { color: #FFFFFF; text-align: center; margin-top: -6px; }
-.project-name { margin: 4px 0 6px; font-size: clamp(18px, 3.6vw, 30px); font-weight: 900; letter-spacing: 0.5px; }
-.project-meta { color: #bca6a6; font-size: 1.05rem; margin-bottom: 6px; }
-.project-desc { margin: 0; font-size: clamp(12px, 1.7vw, 16px); color: rgba(255,255,255,0.9); line-height: 1.7; }
+/* 프로젝트 칩도 멤버 칩과 동일한 디자인 적용 */
+.project-chip {
+    border: none;
+    outline: none;
+    padding: 10px 18px;
+    border-radius: 1000px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.project-chip:focus-visible {
+    box-shadow: 0 0 0 3px rgba(87, 5, 15, 0.6);
+}
+.project-chip.active {
+    background: var(--primary);
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+    transform: translateY(-2px);
+}
+.project-chip:not(.active) {
+    background: rgba(255,255,255,0.1);
+    color: #FFFFFF;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+
+.project-chip:hover,
+.project-chip:active {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+}
+
+.project-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+    margin: 0 0 22px;
+}
+
+.project-info { color: #FFFFFF; text-align: left; margin-top: -3px; padding-left: 3px; }
+.project-name { margin: 0; font-size: clamp(18px, 3.6vw, 30px); font-weight: 700; letter-spacing: 0.5px; text-align: left; padding-left: 3px; }
+.project-meta { color: #7D343D; font-size: 1.05rem; text-align: left; padding-left: 3px; }
+.project-desc { margin: 0; font-size: clamp(12px, 1.7vw, 16px); color: rgba(255,255,255,0.9); line-height: 1.7; text-align: left; padding-left: 3px; }
 
 @media (max-width: 1024px) {
     .project-container { width: 100vw; }
@@ -196,6 +284,19 @@
 @keyframes fadeInError {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+.project-empty-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 180px 0 60px 0;
+    opacity: 0.85;
+    letter-spacing: -0.01em;
+    background: none;
+    border-radius: 18px;
+    transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1);
 }
 /* 주요 섹션 스크롤 문제 해결: 각 섹션에 스크롤 가능하도록 */
 .section {
@@ -594,6 +695,19 @@ body.loaded .content:not(.section) {
     opacity: 0;
     transition: opacity 0.3s ease;
 }
+.content.section.project,
+#project-section {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100vw;
+    min-height: 100vh;
+    /* display: flex; */
+    /* align-items: flex-start; */
+    /* justify-content: center; */
+    padding: 120px 0;
+}
 .content.section.project.active-project {
     opacity: 1;
 }
@@ -735,12 +849,19 @@ body.loaded .content:not(.section) {
     background: linear-gradient(180deg, rgba(72,72,74,0.65) 0%, rgba(56,56,58,0.58) 100%);
     border: 1px solid rgba(255,255,255,0.12);
     box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+    /* 빛나는 효과 추가 */
+    box-shadow: 0 0 10px 4px rgba(255,255,255,0.18), 0 14px 26px rgba(0,0,0,0.35);
+    position: relative;
+    z-index: 1;
 }
 .member-tag.lead {
     color: #FFFFFF;
     background: var(--primary);
     border: none;
-    box-shadow: 0 8px 18px rgba(195, 14, 35, 0.35);
+    box-shadow: 0 0 16px 10px rgba(195, 14, 35, 0.38), 0 10px 20px rgba(195, 14, 35, 0.35);
+    /* 리드 태그는 더 강한 빛 효과 */
+    position: relative;
+    z-index: 2;
 }
 
 .member-info { color: #FFFFFF; text-align: center; margin-top: -6px; }
@@ -1080,7 +1201,7 @@ html {
 
 /* 섹션 간 여유 간격 박스 */
 .section-gap {
-    width: 100%;
+    width: 100%;    
     height: 100vh; /* 많이 넓은 간격: 필요 시 값 조정 */
 }
 
@@ -1574,4 +1695,13 @@ html {
 .name-accent {
     font-weight: 700;
     color: white,
+}
+
+/* 주요 섹션 가로 스크롤 방지 */
+.content.section.home,
+.content.section.intro,
+.content.section.values,
+.content.section.inform,
+.content.section.mascot {
+    overflow-x: hidden;
 }
