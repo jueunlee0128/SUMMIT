@@ -79,7 +79,7 @@
         <div class="values-grid">
             <div class="value">도전</div>
             <div class="value">열정</div>
-            <div class="value">융합</div>
+            <div class="value">협동심</div>
         </div>
     </div>
 
@@ -188,48 +188,6 @@
         <div class="qna-container">
             <h2 class="qna-title">자주 묻는 질문</h2>
             <div class="qna-list">     
-                <div class="qna-item" data-id="q1">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">이름 뜻이 뭔가요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">SUMMIT은 정상이라는 의미를 담고 있습니다. 각 분야의 최정상들이 모여 세상의 경제적 가치를 실현하기 위한 정상에 함께 도달하자라는 의미를 가지고 있습니다!</p>
-                    </div>
-                </div>
-                <div class="qna-item" data-id="q2">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">금융이나 경제에 대한 지식이 부족해도 지원이 가능한가요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">의지만 있다면 가능합니다. 기초 스터디와 실습을 통해 함께 성장해요.</p>
-                    </div>
-                </div>
-                <div class="qna-item" data-id="q3">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">주요 프로젝트는 어떤 방식으로 이루어지나요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">소규모 팀을 구성해 기획–디자인–개발–리서치를 순환하며 진행합니다.</p>
-                    </div>
-                </div>
-                <div class="qna-item" data-id="q4">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">동아리 활동을 통해 어떤 역량을 키울 수 있나요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">금융 리터러시, 데이터 분석, 프로덕트 개발 역량과 협업 능력을 기릅니다.</p>
-                    </div>
-                </div>
-                <div class="qna-item" data-id="q5">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">부서별로 몇 명정도 뽑을 예정인가요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">해당 기수의 상황에 따라 유동적으로 선발 인원을 조정합니다.</p>
-                    </div>
-                </div>
-                <div class="qna-item" data-id="q6">
-                    <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">선발 과정에서 가장 중요하게 보는 요소는 무엇인가요?</span></div>
-                    <div class="qna-answer">
-                        <span class="a-prefix">A :</span>
-                        <p class="qna-answer-text">성장 의지, 꾸준함, 팀워크를 중점적으로 평가합니다.</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -331,17 +289,24 @@
                         </div>
         </div>
     </div>
-    <!-- 프로젝트 세부 탭 -->
-    <div class="content section project-detail" id="project-detail-section" style="display: none; flex-direction: column; align-items: center;">
-        <div class="detail-header">
-            <span class="detail-year"></span>
-            <h2 class="detail-title"></h2>
-        </div>
-        <div class="detail-images" style="display: flex; gap: 16px; margin: 24px 0;"></div>
-        <div class="detail-desc" style="font-size: 1.2em; color: #fff; margin-bottom: 32px;"></div>
-        <button class="detail-back-btn" onclick="document.getElementById('project-detail-section').style.display='none';document.getElementById('project-section').style.display='flex';">돌아가기</button>
-    </div>
+        <script type="module" src="app.js"></script>
 
-    <script src="app.js"></script>
+        <!-- 프로젝트 세부 탭 (카드 클릭 시 표시) -->
+        <div id="project-detail-section" style="display:none;">
+            <div class="project-detail-box"></div>
+            <div class="project-detail-controls">
+                <button class="project-detail-arrow" id="project-detail-arrow-left" aria-label="이전 이미지">
+                    <svg class="arrow-svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <polyline points="26,10 14,20 26,30" fill="none" stroke="#D61F26" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <span class="project-detail-index" id="project-detail-image-index">1 / 1</span>
+                <button class="project-detail-arrow" id="project-detail-arrow-right" aria-label="다음 이미지">
+                    <svg class="arrow-svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <polyline points="14,10 26,20 14,30" fill="none" stroke="#D61F26" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
 </body>
 </html>

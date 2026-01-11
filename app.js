@@ -1,3 +1,126 @@
+import { db } from './firebase.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let PROJECTS = [];
+async function loadProjects() {
+  const colRef = collection(db, 'projects');
+  const snapshot = await getDocs(colRef);
+  PROJECTS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderProjectChips();
+}
+
+let selectedYear = '전체'; // 파일 상단에 선언
+
+function renderProjectChips() {
+  const chipTemplate = document.getElementById('project-chip-template');
+  const chipContainer = document.querySelector('.project-filters');
+  if (!chipTemplate || !chipContainer) return;
+  // 연도 목록 추출 및 강제 추가
+  const allYears = Array.from(new Set(PROJECTS.map(p => p.year)));
+  if (!allYears.includes('2026년')) allYears.push('2026년');
+  const years = ['전체', ...allYears.sort((a, b) => b.localeCompare(a))];
+  function renderChips() {
+    chipContainer.innerHTML = '';
+    years.forEach(year => {
+      const chipNode = chipTemplate.content.cloneNode(true);
+      const chipBtn = chipNode.querySelector('.project-chip');
+      chipBtn.textContent = year;
+      chipBtn.classList.toggle('active', year === selectedYear);
+      chipBtn.addEventListener('click', () => {
+        if (selectedYear === year) return;
+        selectedYear = year;
+        renderChips();
+        renderProjectCards(selectedYear);
+      });
+      chipContainer.appendChild(chipBtn);
+    });
+  }
+  renderChips();
+  renderProjectCards(selectedYear);
+}
+
+function renderProjectCards(selectedYear = '전체') {
+  const grid = document.querySelector('.project-grid');
+  const oldCards = Array.from(grid.children);
+
+  // 1. 기존 카드 페이드 아웃
+  oldCards.forEach(card => {
+    card.classList.add('fade-out');
+  });
+
+  // 2. 트랜지션 후 기존 카드 삭제 & 새 카드 페이드 인
+  setTimeout(() => {
+    grid.innerHTML = '';
+    const filtered = PROJECTS.filter(p => selectedYear === '전체' ? true : p.year === selectedYear);
+    if (filtered.length === 0 && selectedYear !== '전체') {
+      const msg = document.createElement('div');
+      msg.className = 'project-empty-message fade-in';
+      msg.textContent = `${selectedYear}의 SUMMIT을 기대해주세요!`;
+      grid.appendChild(msg);
+      setTimeout(() => msg.classList.remove('fade-in'), 300);
+      return;
+    }
+    filtered.forEach(data => {
+      addProjectCard(data);
+      // 마지막에 추가된 카드에 페이드 인 클래스 적용
+      const lastCard = grid.lastElementChild;
+      if (lastCard) {
+        lastCard.classList.add('fade-in');
+        setTimeout(() => lastCard.classList.remove('fade-in'), 500);
+      }
+    });
+  }, 300); // 기존 카드 트랜지션 시간과 동일하게
+}
+
+let QNAS = [];
+
+async function loadQnA() {
+  const colRef = collection(db, 'questions');
+  const snapshot = await getDocs(colRef);
+  QNAS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderQnAList();
+}
+
+function renderQnAList() {
+  const list = document.querySelector('.qna-list');
+  if (!list) return;
+  list.innerHTML = '';
+  QNAS.forEach(qna => {
+    const item = document.createElement('div');
+    item.className = 'qna-item';
+    item.innerHTML = `
+      <div class="qna-head"><span class="q-prefix">Q :</span><span class="qna-question">${qna.question}</span></div>
+      <div class="qna-answer">
+        <span class="a-prefix">A :</span>
+        <p class="qna-answer-text">${qna.answer}</p>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ===== 상단 로고 및 네비게이션 클릭 시 탭 이동 =====
+document.addEventListener('DOMContentLoaded', function () {
+  // 상단 좌측 로고 클릭 시 홈으로 이동
+  const topLeftLogo = document.querySelector('.top-left-logo');
+  if (topLeftLogo) {
+    topLeftLogo.style.cursor = 'pointer';
+    topLeftLogo.addEventListener('click', function () {
+      showSection('home');
+    });
+  }
+  // 네비게이션 각 탭 클릭 시 해당 섹션으로 이동
+  const navLinks = document.querySelectorAll('nav.top-right-nav .nav-link');
+  navLinks.forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      const section = this.getAttribute('data-section');
+      if (section) {
+        showSection(section);
+      }
+    });
+  });
+});
 // ===== 프로젝트 카드 동적 추가 함수 =====
 function addProjectCard({ name, year, desc, images }) {
   const grid = document.querySelector('.project-grid');
@@ -7,7 +130,7 @@ function addProjectCard({ name, year, desc, images }) {
   node.querySelector('.project-name').textContent = name;
   node.querySelector('.project-meta').textContent = year;
   node.querySelector('.project-desc').textContent = desc;
-  // 이미지 배열이 있으면 첫 번째 이미지만 표시
+  // 박스 썸네일 이미지
   if (images && images.length > 0) {
     const photoDiv = node.querySelector('.project-photo');
     if (photoDiv) {
@@ -20,103 +143,77 @@ function addProjectCard({ name, year, desc, images }) {
       photoDiv.appendChild(img);
     }
   }
+  // 카드 클릭 시 세부 탭 진입
+  const cardElem = node.querySelector('.project-card');
+  if (cardElem) {
+    cardElem.addEventListener('click', function () {
+      const projectSection = document.getElementById('project-section');
+      const detailSection = document.getElementById('project-detail-section');
+      const nav = document.querySelector('nav.top-right-nav');
+      if (!detailSection) return;
+      const detailBox = detailSection.querySelector('.project-detail-box');
+      const leftArrow = document.getElementById('project-detail-arrow-left');
+      const rightArrow = document.getElementById('project-detail-arrow-right');
+      const indexText = document.getElementById('project-detail-image-index');
+      let currentIndex = 0;
+      // 이미지 슬라이드 렌더 함수
+      function renderImage() {
+        if (!detailBox) return;
+        // 기존 이미지 제거
+        detailBox.innerHTML = '';
+        if (images && images.length > 0) {
+          const img = document.createElement('img');
+          img.src = images[currentIndex];
+          img.alt = name;
+          img.className = 'project-image active';
+          detailBox.appendChild(img);
+          if (indexText) indexText.textContent = `${currentIndex + 1} / ${images.length}`;
+        } else {
+          detailBox.textContent = '이미지가 없습니다.';
+          if (indexText) indexText.textContent = '';
+        }
+      }
+      if (leftArrow && rightArrow && indexText) {
+        leftArrow.onclick = () => {
+          if (!images || images.length <= 1) return;
+          currentIndex = (currentIndex - 1 + images.length) % images.length;
+          renderImage();
+        };
+        rightArrow.onclick = () => {
+          if (!images || images.length <= 1) return;
+          currentIndex = (currentIndex + 1) % images.length;
+          renderImage();
+        };
+      }
+      renderImage();
+      // 컨트롤 숨김 처리 (이미지 1개 이하)
+      if (images && images.length <= 1) {
+        if (leftArrow) leftArrow.style.visibility = 'hidden';
+        if (rightArrow) rightArrow.style.visibility = 'hidden';
+        if (indexText) indexText.style.visibility = 'hidden';
+      } else {
+        if (leftArrow) leftArrow.style.visibility = 'visible';
+        if (rightArrow) rightArrow.style.visibility = 'visible';
+        if (indexText) indexText.style.visibility = 'visible';
+      }
+      // 세부 탭 페이드 인/아웃
+      projectSection.style.transition = 'opacity 0.4s';
+      projectSection.style.opacity = '1';
+      detailSection.style.transition = 'opacity 0.4s';
+      detailSection.style.opacity = '0';
+      detailSection.style.display = 'flex';
+      setTimeout(() => {
+        projectSection.style.opacity = '0';
+        setTimeout(() => {
+          projectSection.style.display = 'none';
+          detailSection.style.opacity = '1';
+        }, 400);
+      }, 10);
+    });
+  }
   grid.appendChild(node);
 }
 
-// 예시: DOMContentLoaded 시 9개 카드 추가
-document.addEventListener('DOMContentLoaded', () => {
-  const exampleProjects = [
-    { name: 'SUMMIT1', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/Jueun.png', 'images/Imda.png'] },
-    { name: 'SUMMIT2', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project2.jpg'] },
-    { name: 'SUMMIT3', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project3.jpg', 'images/project3-2.jpg', 'images/project3-3.jpg'] },
-    { name: 'SUMMIT4', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project4.jpg'] },
-    { name: 'SUMMIT5', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project5.jpg', 'images/project5-2.jpg'] },
-    { name: 'SUMMIT6', year: '2025년', desc: '2025년 프로젝트 설명입니다.', images: ['images/project6.jpg'] },
-  ];
-
-  // 칩 필터 생성
-  const years = ['전체', '2026년', '2025년'];
-  const chipTemplate = document.getElementById('project-chip-template');
-  const chipContainer = document.querySelector('.project-filters');
-  let selectedYear = '전체';
-  function renderChips() {
-    chipContainer.innerHTML = '';
-    years.forEach(year => {
-      const chipNode = chipTemplate.content.cloneNode(true);
-      const chipBtn = chipNode.querySelector('.project-chip');
-      chipBtn.textContent = year;
-      chipBtn.classList.toggle('active', year === selectedYear);
-      chipBtn.addEventListener('click', () => {
-        if (selectedYear === year) return; // Prevent re-render if same chip
-        selectedYear = year;
-        renderChips();
-        renderProjectCards();
-      });
-      chipContainer.appendChild(chipBtn);
-    });
-  }
-
-  function renderProjectCards() {
-    const grid = document.querySelector('.project-grid');
-    // Fade out existing cards
-    const cards = Array.from(grid.children);
-    const filtered = exampleProjects.filter(p => selectedYear === '전체' ? true : p.year === selectedYear);
-    if (cards.length > 0) {
-      cards.forEach(card => card.classList.add('fade-out'));
-      setTimeout(() => {
-        grid.innerHTML = '';
-        if (filtered.length === 0 && selectedYear !== '전체') {
-          const msg = document.createElement('div');
-          msg.className = 'project-empty-message';
-          msg.textContent = `${selectedYear}의 SUMMIT을 기대해주세요!`;
-          grid.appendChild(msg);
-        } else {
-          filtered.forEach(data => {
-            addProjectCard(data);
-            const newCard = grid.lastElementChild;
-            if (newCard) {
-              newCard.style.opacity = '0';
-              void newCard.offsetWidth;
-              newCard.classList.add('fade-in');
-              setTimeout(() => {
-                newCard.classList.remove('fade-in');
-                newCard.style.opacity = '';
-              }, 100);
-            }
-          });
-        }
-        updateProjectScrollPadding();
-      }, 120);
-    } else {
-      grid.innerHTML = '';
-      if (filtered.length === 0 && selectedYear !== '전체') {
-        const msg = document.createElement('div');
-        msg.className = 'project-empty-message';
-        msg.textContent = `${selectedYear}의 SUMMIT을 기대해주세요!`;
-        grid.appendChild(msg);
-      } else {
-        filtered.forEach(data => {
-          addProjectCard(data);
-          const newCard = grid.lastElementChild;
-          if (newCard) {
-            newCard.style.opacity = '0';
-            void newCard.offsetWidth;
-            newCard.classList.add('fade-in');
-            setTimeout(() => {
-              newCard.classList.remove('fade-in');
-              newCard.style.opacity = '';
-            }, 380);
-          }
-        });
-      }
-      updateProjectScrollPadding();
-    }
-  } 
-
-  // 초기 렌더링
-  renderChips();
-  renderProjectCards();
-});
 // ===== 입력 칸 포커스 시 snake-border 확장 애니메이션 =====
 function setupSnakeBorderInputFocus() {
   const inputs = document.querySelectorAll('.result-input');
@@ -167,15 +264,13 @@ const isResultCheckPeriod = true;  // true: 합격자 확인 기간
 
 
 // ===== 합격/불합격자 데이터 저장 =====
-// 아래 배열에 합격자와 불합격자의 학번(id), 이름(name), 전화번호(phone)을 각각 추가하세요.
-// 예: { id: '2026-001', name: '홍길동', phone: '01012345678' }
-const ACCEPTED_STUDENTS = [
-  // { id: '2026-001', name: '홍길동', phone: '01012345678' },
-  { id: '1419', name: '이주은', phone: '01011112222'},
-];
-const FAILED_STUDENTS = [
-  { id: '2417', name: '이주은', phone: '01033334444'},
-];
+let VOLUNTEERS = [];
+
+async function loadVolunteers() {
+  const colRef = collection(db, 'volunteers');
+  const snapshot = await getDocs(colRef);
+  VOLUNTEERS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
 
 // ===== 홈 스크롤 페이드 설정 =====
 const HOME_SCROLL_START = 80;   // px: 이 높이부터 효과 시작
@@ -688,26 +783,26 @@ function initMascotAnimations() {
 
 // ===== 섹션 전환 기능 =====
 function showSection(sectionName) {
-    // 합격자 창 배경 바 슬라이드 애니메이션
-    if (sectionName === 'result-pass') {
-      setTimeout(() => {
-        const bars = document.querySelectorAll('.result-pass-bg .bar');
-        bars.forEach((bar, i) => {
-          bar.style.transition = 'transform 0.8s cubic-bezier(0.6,0,0.4,1), opacity 0.5s';
-          bar.style.transform = 'scaleY(0)';
-          bar.style.opacity = '0.7';
-          bar.style.transitionDelay = '';
-        });
-        // 순차적으로 scaleY를 1로 변경
-        bars.forEach((bar, i) => {
-          setTimeout(() => {
-            bar.style.transform = 'scaleY(1)';
-            bar.style.transitionDelay = `${i * 0.18}s`;
-          }, i * 180);
-        });
-      }, 50);
-    }
-  const FADE_DURATION = 300; // ms, matches CSS per-screen fade (style.css)
+  // 합격자 창 배경 바 슬라이드 애니메이션
+  if (sectionName === 'result-pass') {
+    setTimeout(() => {
+      const bars = document.querySelectorAll('.result-pass-bg .bar');
+      bars.forEach((bar, i) => {
+        bar.style.transition = 'transform 0.8s cubic-bezier(0.6,0,0.4,1), opacity 0.5s';
+        bar.style.transform = 'scaleY(0)';
+        bar.style.opacity = '0.7';
+        bar.style.transitionDelay = '';
+      });
+      // 순차적으로 scaleY를 1로 변경
+      bars.forEach((bar, i) => {
+        setTimeout(() => {
+          bar.style.transform = 'scaleY(1)';
+          bar.style.transitionDelay = `${i * 0.18}s`;
+        }, i * 180);
+      });
+    }, 50);
+  }
+  const FADE_DURATION = 500; // ms
   const targetId = sectionName + '-section';
   // 현재 탭의 스크롤 저장
   saveCurrentTabScroll();
@@ -719,22 +814,25 @@ function showSection(sectionName) {
   // 모든 섹션 중 대상이 아닌 섹션만 페이드아웃 및 숨김 예약
   document.querySelectorAll('.section').forEach((section) => {
     if (section.id !== targetId) {
-      section.classList.remove('active-home', 'active-project', 'active-member', 'active-qna', 'active-inform', 'active-values', 'active-intro', 'active-mascot');
-      // 홈 섹션은 pin 잔상 방지를 위해 즉시 숨김
-      if (section.id === 'home-section') {
-        section.style.display = 'none';
-      } else {
-        setTimeout(() => {
-          section.style.display = 'none';
-        }, FADE_DURATION);
-      }
+      fadeSectionOut(section);
     }
   });
 
-  // 선택된 섹션 페이드인
+  // 프로젝트 세부 탭은 어떤 탭으로 이동하든 항상 숨김 처리
+  const detailSection = document.getElementById('project-detail-section');
+  if (detailSection && detailSection.style.display !== 'none') {
+    detailSection.style.transition = 'opacity 0.4s';
+    detailSection.style.opacity = '0';
+    setTimeout(() => {
+      detailSection.style.display = 'none';
+    }, 400);
+  } else if (detailSection) {
+    detailSection.style.display = 'none';
+    detailSection.style.opacity = '0';
+  }
   setTimeout(() => {
     const targetSection = document.getElementById(targetId);
-    targetSection.style.display = 'flex';
+    fadeSectionIn(targetSection);
     // 탭 진입 시 항상 스크롤 상단으로 이동
     if (window.__lenisInstance && typeof window.__lenisInstance.scrollTo === 'function') {
       window.__lenisInstance.scrollTo(0, { immediate: true });
@@ -860,6 +958,11 @@ function showSection(sectionName) {
                 if (__currentTab === 'project') updateProjectScrollPadding();
               });
             }
+            // 프로젝트 세부 탭에서도 상단 텍스트(로고, 네비) 항상 표시
+            const topLeftLogo = document.querySelector('.top-left-logo');
+            const topRightNav = document.querySelector('.top-right-nav');
+            if (topLeftLogo) topLeftLogo.style.display = 'block';
+            if (topRightNav) topRightNav.style.display = 'flex';
         } else if (sectionName === 'result' || sectionName === 'result-pass' || sectionName === 'result-fail') {
           // 결과 확인 탭은 특별 초기화 없음
           document.body.classList.remove('qna-mode');
@@ -1187,29 +1290,17 @@ function updateLoading() {
 // ===== Member: Data-driven filters and grid =====
 // 버튼(필터) 추가를 간단히: 아래 배열에 { id, label, variant } 항목을 추가하세요.
 // variant: 'primary' | 'muted' (디자인 톤)
-const MEMBER_FILTERS = [
-  { id: '1기', label: '1기', variant: 'primary' },
-  { id: '창립멤버', label: '창립멤버', variant: 'muted' },
-];
 
-// 멤버 박스 데이터: { name, role, tags, bio }에서 tags에 해당 필터 id를 넣으면 필터링됩니다.
-const MEMBERS = [
-  { name: '황인성', role: '동장 / 개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 황인성입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '조현석', role: '창동장 / 디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 조현석입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '양신우', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 양신우입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '김민경', role: '디자인', tags: ['창립멤버'], bio: '안녕하세요, 저는 김민경입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '임다솔', role: '기획', tags: ['창립멤버'], bio: '23기 학홍 팀장', image: 'images/Imda.png' },
-  { name: '서은찬', role: '기획', tags: ['창립멤버'], bio: '안녕하세요, 저는 서은찬입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '주윤성', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 주윤성입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '손연우', role: '개발', tags: ['창립멤버'], bio: '안녕하세요, 저는 손연우입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '민수연', role: '동장 / 개발', tags: ['1기'], bio: '안녕하세요, 저는 민수연입니다.', image: 'images/Sym.png' },
-  { name: '이주은', role: '창동장 / 개발', tags: ['1기'], bio: '서밋 잡일 담당 바지사장🥲', image: 'images/Jueun.png' },
-  { name: '양세린', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 양세린입니다.', image: 'images/Saerine.png' },
-  { name: '김서윤', role: '디자인', tags: ['1기'], bio: '안녕하세요, 저는 김서윤입니다.', image: 'images/SummitMainLogo1.png' },
-  { name: '장세혁', role: '기획', tags: ['1기'], bio: '테토남', image: 'images/Saeping.png' }
-];
+let MEMBERS = [];
 
 let __memberActiveFilter = null; // 선택된 필터 id (null이면 전체)
+
+async function loadMembers() {
+  const colRef = collection(db, 'members');
+  const snapshot = await getDocs(colRef);
+  MEMBERS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  renderMemberFilters();
+}
 
 function getHighestGenerationFilterId() {
   let maxGen = -Infinity;
@@ -1232,7 +1323,81 @@ function getHighestGenerationFilterId() {
   });
   return chosen;
 }
+function renderMemberGrid(fadeIn = false) {
+  const section = document.getElementById('member-section');
+  if (!section) return;
+  const grid = section.querySelector('.member-grid');
+  const tpl = document.getElementById('member-card-template');
+  if (!grid || !tpl) return;
 
+  grid.innerHTML = '';
+  let data = MEMBERS.filter(m => {
+    if (!__memberActiveFilter) return true;
+    const tags = Array.isArray(m.tags) ? m.tags : [];
+    return tags.includes(__memberActiveFilter);
+  });
+
+  // 동장 > 창동장 > 1기 > 창립멤버 > 나머지 순서로 정렬
+  data = data.slice().sort((a, b) => {
+    const getPriority = (m) => {
+      if (typeof m.role === 'string') {
+        if (m.role.includes('동장')) return 1;
+        if (m.role.includes('창동장')) return 2;
+      }
+      if (Array.isArray(m.tags)) {
+        if (m.tags.includes('1기')) return 3;
+        if (m.tags.includes('창립멤버')) return 4;
+      }
+      return 99;
+    };
+    const aPri = getPriority(a);
+    const bPri = getPriority(b);
+    if (aPri !== bPri) return aPri - bPri;
+    return (a.name || '').localeCompare(b.name || '', 'ko');
+  });
+
+  const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
+  useData.forEach((m) => {
+    const node = tpl.content.cloneNode(true);
+    // 이미지
+    const imgEl = node.querySelector('.member-image');
+    if (imgEl) {
+      if (m.image) {
+        imgEl.src = m.image;
+        imgEl.alt = m.name || '';
+      } else {
+        imgEl.src = 'images/SummitMainLogo1.png'; // 기본 이미지(없을 때)
+        imgEl.alt = 'No Image';
+      }
+    }
+    // 이름, 자기소개
+    const nameEl = node.querySelector('.member-name');
+    const bioEl = node.querySelector('.member-bio');
+    if (nameEl) nameEl.textContent = m.name || '멤버';
+    if (bioEl) bioEl.textContent = m.bio || '';
+    // 역할 칩
+    const tagsWrap = node.querySelector('.member-tags');
+    const tokens = String(m.role || '').split('/').map(s => s.trim()).filter(Boolean);
+    if (tagsWrap) {
+      tokens.forEach(t => {
+        const chip = document.createElement('span');
+        chip.className = 'member-tag';
+        chip.textContent = t;
+        if (t === '동장' || t === '창동장') chip.classList.add('lead');
+        tagsWrap.appendChild(chip);
+      });
+    }
+    grid.appendChild(node);
+    // 페이드 인 효과
+    if (fadeIn) {
+      node.firstElementChild?.classList?.add('fade-in');
+      setTimeout(() => {
+        node.firstElementChild?.classList?.remove('fade-in');
+      }, 500);
+    }
+  });
+  updateMemberScrollPadding();
+}
 function renderMemberFilters() {
   const section = document.getElementById('member-section');
   if (!section) return;
@@ -1240,8 +1405,30 @@ function renderMemberFilters() {
   const tpl = document.getElementById('member-chip-template');
   if (!wrap || !tpl) return;
 
+  // tags에서 필터 목록 추출
+  const tagSet = new Set();
+  MEMBERS.forEach(m => (m.tags || []).forEach(tag => tagSet.add(tag)));
+  let filters = Array.from(tagSet).map(tag => ({
+    id: tag,
+    label: tag,
+    variant: tag.includes('기') ? 'primary' : 'muted'
+  }));
+
+  // 1기 > 창립멤버 > 나머지 순서로 정렬
+  filters = filters.sort((a, b) => {
+    if (a.id === '1기') return -1;
+    if (b.id === '1기') return 1;
+    if (a.id === '창립멤버') return -1;
+    if (b.id === '창립멤버') return 1;
+    return a.label.localeCompare(b.label, 'ko');
+  });
+
   wrap.innerHTML = '';
-  MEMBER_FILTERS.forEach(f => {
+  // 기본 선택: 첫 번째 필터
+  if (!__memberActiveFilter && filters.length > 0) {
+    __memberActiveFilter = filters[0].id;
+  }
+  filters.forEach(f => {
     const chipNode = tpl.content.cloneNode(true);
     const btn = chipNode.querySelector('.member-chip');
     btn.textContent = f.label;
@@ -1249,154 +1436,83 @@ function renderMemberFilters() {
     btn.classList.add(f.variant === 'primary' ? 'chip-primary' : 'chip-muted');
     if (__memberActiveFilter === f.id) btn.classList.add('active');
     btn.addEventListener('click', () => {
-      if (__memberActiveFilter === f.id) return; // Prevent re-render if same chip
+      if (__memberActiveFilter === f.id) return;
       __memberActiveFilter = f.id;
-      // active 상태 업데이트
       wrap.querySelectorAll('.member-chip').forEach(el => el.classList.remove('active'));
       btn.classList.add('active');
-      renderMemberGrid();
+      // 카드 페이드 아웃
+      const grid = document.querySelector('.member-grid');
+      if (grid) {
+        Array.from(grid.children).forEach(card => card.classList.add('fade-out'));
+      }
+      setTimeout(() => {
+        renderMemberGrid(true); // 카드 페이드 인
+      }, 300);
     });
     wrap.appendChild(chipNode);
   });
+  renderMemberGrid();
 }
 
-function renderMemberGrid() {
+
+function updateProjectScrollPadding() {
+  const section = document.getElementById('project-section');
+  if (!section) return;
+  const grid = section.querySelector('.project-grid');
+  if (!grid) return;
+  const count = grid.children.length;
+  // 브레이크포인트에 따라 컬럼 수 결정
+  const w = window.innerWidth || document.documentElement.clientWidth || 0;
+  const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
+  const rows = Math.max(1, Math.ceil(count / cols));
+  // 최소 스크롤 여유: 1행일 때 140vh, 추가 행마다 50vh 가산
+  const base = 110; // vh
+  const perRow = 50; // vh
+  const minVh = base + perRow * (rows - 1);
+  if (document.body.classList.contains('project-mode')) {
+    document.body.style.minHeight = `${minVh}vh`;
+  }
+}
+// ===== Member: dynamic scroll padding based on rows =====
+function updateMemberScrollPadding() {
   const section = document.getElementById('member-section');
   if (!section) return;
   const grid = section.querySelector('.member-grid');
-  const tpl = document.getElementById('member-card-template');
-  if (!grid || !tpl) return;
-
-  // 그리드 페이드 아웃 → 데이터 교체 → 페이드 인 애니메이션
-  function setMemberImage(node, m) {
-    const imgEl = node.querySelector('.member-image');
-    if (imgEl && m.image) {
-      imgEl.src = m.image;
-      imgEl.alt = m.name || '';
-    }
-  }
-  if (typeof gsap !== 'undefined') {
-    gsap.to(grid, { opacity: 0, duration: 0.18, onComplete: () => {
-      grid.innerHTML = '';
-      const data = (Array.isArray(MEMBERS) ? MEMBERS : [])
-        .filter(m => {
-          if (!__memberActiveFilter) return true;
-          const tags = Array.isArray(m.tags) ? m.tags : [];
-          return tags.includes(__memberActiveFilter);
-        });
-      const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
-      useData.forEach((m) => {
-        const node = tpl.content.cloneNode(true);
-        setMemberImage(node, m);
-        const nameEl = node.querySelector('.member-name');
-        const bioEl = node.querySelector('.member-bio');
-        const tagsWrap = node.querySelector('.member-tags');
-        if (nameEl) nameEl.textContent = m.name || '멤버';
-        if (bioEl) bioEl.textContent = m.bio || '';
-        // 역할을 칩으로 분할 렌더링 (예: '동장 / 개발')
-        const tokens = String(m.role || '').split('/').map(s => s.trim()).filter(Boolean);
-        if (tagsWrap) {
-          tokens.forEach(t => {
-            const chip = document.createElement('span');
-            chip.className = 'member-tag';
-            chip.textContent = t;
-            // 동장/창동장은 빨간색 하이라이트
-            if (t === '동장' || t === '창동장') {
-              chip.classList.add('lead');
-            }
-            // 카드 수가 변경되었을 수 있으므로 스크롤 여유 재계산
-            updateMemberScrollPadding();
-            tagsWrap.appendChild(chip);
-          });
-        }
-        grid.appendChild(node);
-      });
-      gsap.to(grid, { opacity: 1, duration: 0.22, overwrite: true });
-    }, overwrite: true });
-  } else {
-    grid.innerHTML = '';
-    const data = (Array.isArray(MEMBERS) ? MEMBERS : [])
-      .filter(m => {
-        if (!__memberActiveFilter) return true;
-        const tags = Array.isArray(m.tags) ? m.tags : [];
-        return tags.includes(__memberActiveFilter);
-      });
-    const useData = data.length > 0 ? data : new Array(3).fill({ name: '멤버', role: '' });
-    useData.forEach((m) => {
-      const node = tpl.content.cloneNode(true);
-      setMemberImage(node, m);
-      const nameEl = node.querySelector('.member-name');
-      const bioEl = node.querySelector('.member-bio');
-      const tagsWrap = node.querySelector('.member-tags');
-      if (nameEl) nameEl.textContent = m.name || '멤버';
-      if (bioEl) bioEl.textContent = m.bio || '';
-      // 역할을 칩으로 분할 렌더링 (예: '동장 / 개발')
-      const tokens = String(m.role || '').split('/').map(s => s.trim()).filter(Boolean);
-      if (tagsWrap) {
-        tokens.forEach(t => {
-          const chip = document.createElement('span');
-          chip.className = 'member-tag';
-          chip.textContent = t;
-          if (t === '동장' || t === '창동장') {
-            chip.classList.add('lead');
-          }
-          updateMemberScrollPadding();
-          tagsWrap.appendChild(chip);
-        });
-      }
-      grid.appendChild(node);
-    });
+  if (!grid) return;
+  const count = grid.children.length;
+  // 브레이크포인트에 따라 컬럼 수 결정
+  const w = window.innerWidth || document.documentElement.clientWidth || 0;
+  const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
+  const rows = Math.max(1, Math.ceil(count / cols));
+  // 최소 스크롤 여유: 1행일 때 140vh, 추가 행마다 50vh 가산
+  const base = 140; // vh
+  const perRow = 50; // vh
+  const minVh = base + perRow * (rows - 1);
+  // 멤버 탭에 있을 때만 min-height를 동적으로 조정
+  if (document.body.classList.contains('member-mode')) {
+    document.body.style.minHeight = `${minVh}vh`;
   }
 }
 
-      // ===== Member: dynamic scroll padding based on rows =====
-      function updateMemberScrollPadding() {
-        const section = document.getElementById('member-section');
-        if (!section) return;
-        const grid = section.querySelector('.member-grid');
-        if (!grid) return;
-        const count = grid.children.length;
-        // CSS 브레이크포인트에 맞춘 컬럼 계산
-        const w = window.innerWidth || document.documentElement.clientWidth || 0;
-        const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
-        const rows = Math.max(1, Math.ceil(count / cols));
-        // 최소 스크롤 여유: 1행일 때 140vh, 추가 행마다 50vh 가산
-        const base = 140; // vh
-        const perRow = 50; // vh
-        const minVh = base + perRow * (rows - 1);
-        // 콘텐츠가 더 길면 자연 높이를 우선하므로 min-height만 설정
-        // 멤버 탭에 있을 때만 min-height를 동적으로 조정
-        if (document.body.classList.contains('member-mode')) {
-          document.body.style.minHeight = `${minVh}vh`;
+// ===== 멤버 탭 진입 시 초기화 =====
+function initMemberSection() {
+  // 가장 높은 기수 탭을 기본 활성화
+  if (!__memberActiveFilter) {
+    // 기수 필터 중 가장 숫자가 큰 것 선택
+    const tagSet = new Set();
+    MEMBERS.forEach(m => (m.tags || []).forEach(tag => tagSet.add(tag)));
+    let maxGen = -Infinity, chosen = null;
+    Array.from(tagSet).forEach(tag => {
+      const m = tag.match(/(\d+)\s*기/);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (num > maxGen) {
+          maxGen = num;
+          chosen = tag;
         }
       }
-
-        // ===== Project: dynamic scroll padding based on rows =====
-        function updateProjectScrollPadding() {
-          const section = document.getElementById('project-section');
-          if (!section) return;
-          const grid = section.querySelector('.project-grid');
-          if (!grid) return;
-          const count = grid.children.length;
-          // CSS 브레이크포인트에 맞춘 컬럼 계산
-          const w = window.innerWidth || document.documentElement.clientWidth || 0;
-          const cols = w <= 640 ? 1 : (w <= 1024 ? 2 : 3);
-          const rows = Math.max(1, Math.ceil(count / cols));
-          // 최소 스크롤 여유: 1행일 때 100vh, 추가 행마다 50vh 가산
-          const base = 100; // vh
-          const perRow = 50; // vh
-          const minVh = base + perRow * (rows - 1);
-          // 프로젝트 탭에 있을 때만 min-height를 동적으로 조정
-          if (document.body.classList.contains('project-mode')) {
-            document.body.style.minHeight = `${minVh}vh`;
-          }
-        }
-
-function initMemberSection() {
-  // 처음 진입 시 가장 높은 기수 탭을 기본 활성화
-  if (!__memberActiveFilter) {
-    const def = getHighestGenerationFilterId();
-    __memberActiveFilter = def || null;
+    });
+    __memberActiveFilter = chosen || Array.from(tagSet)[0] || null;
   }
   renderMemberFilters();
   renderMemberGrid();
@@ -1437,12 +1553,9 @@ function setupResultCheck() {
       return;
     }
     // 학생 데이터 찾기
-    let student = ACCEPTED_STUDENTS.find(s => String(s.id).trim() === id && String(s.name).trim() === name);
-    let isAccepted = !!student;
-    if (!student) {
-      student = FAILED_STUDENTS.find(s => String(s.id).trim() === id && String(s.name).trim() === name);
-    }
-    let isFailed = !!student && !isAccepted;
+    let student = VOLUNTEERS.find(s => String(s.id).trim() === id && String(s.name).trim() === name);
+    let isAccepted = !!student && String(student.pass) === '1';
+    let isFailed = !!student && String(student.pass) === '0';
     if (!student) {
       showResultError('명단에 없는 정보입니다. 학번과 이름을 다시 확인하세요.');
       return;
@@ -1610,6 +1723,7 @@ function setupResultHomeLogo() {
         ].includes(currentTab)) {
           // 홈 섹션 요소만 애니메이션(상단 로고/네비 제외)
           if (typeof gsap !== 'undefined') {
+           
             const home = document.getElementById('home-section');
             const logo = home ? home.querySelector('.center-logo') : null;
             const subtitle = home ? home.querySelector('.subtitle') : null;
@@ -1877,6 +1991,48 @@ function setupResultPassBarAnimation() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  loadProjects();
+  loadMembers();
+  loadVolunteers();
+  loadQnA();
   setupSnakeBorderInputFocus();
   setupResultPassBarAnimation();
 });
+
+// ===== 홈 <-> 프로젝트 섹션 페이드 인/아웃 =====
+function fadeSectionIn(section) {
+  if (!section) return;
+  section.style.opacity = '0';
+  section.style.display = 'flex';
+  section.style.transition = 'opacity 0.5s';
+  setTimeout(() => {
+    section.style.opacity = '1';
+  }, 10);
+}
+function fadeSectionOut(section, callback) {
+  if (!section) { if (callback) callback(); return; }
+  section.style.transition = 'opacity 0.5s';
+  section.style.opacity = '0';
+  setTimeout(() => {
+    section.style.display = 'none';
+    if (callback) callback();
+  }, 500);
+}
+function addArrowClickAnimation(btn) {
+    btn.addEventListener('mousedown', () => {
+        btn.style.transform = 'scale(0.92)';
+    });
+    btn.addEventListener('mouseup', () => {
+        btn.style.transform = '';
+    });
+    btn.addEventListener('mouseleave', () => {
+        btn.style.transform = '';
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const leftArrow = document.getElementById('project-detail-arrow-left');
+    const rightArrow = document.getElementById('project-detail-arrow-right');
+    if (leftArrow) addArrowClickAnimation(leftArrow);
+    if (rightArrow) addArrowClickAnimation(rightArrow);
+});
+
